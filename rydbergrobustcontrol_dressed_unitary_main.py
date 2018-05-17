@@ -3,7 +3,7 @@
 #
 #  rydbergrobust_control_dressed_unitary_main.py
 #  
-#  Copyright 2017 Anupam Mitra <anupam@unm.edu>
+#  Copyright 2018 Anupam Mitra <anupam@unm.edu>
 #  
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@
 from __future__ import division
 
 import numpy as np
+
+import adiabaticevolution
 import rydbergatoms
 import grape
 import robustcostfunctions
@@ -82,4 +84,6 @@ control_problem = {
 }
 
 if __name__ == '__main__':
+	
+	
     phi_opt, infidelity_min = grape.grape(control_problem, debug=True, gtol=1e-5)
