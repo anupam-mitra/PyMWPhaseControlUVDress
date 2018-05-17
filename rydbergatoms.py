@@ -32,14 +32,14 @@ from numpy import exp
 Basis vectors for the eight dimensional Hilbert space
 in the perfect blockade limit
 """
-ket_r1 = np.asarray([[1], [0], [0], [0], [0], [0], [0], [0]])
-ket_1r = np.asarray([[0], [1], [0], [0], [0], [0], [0], [0]])
-ket_r0 = np.asarray([[0], [0], [1], [0], [0], [0], [0], [0]])
-ket_0r = np.asarray([[0], [0], [0], [1], [0], [0], [0], [0]])
-ket_11 = np.asarray([[0], [0], [0], [0], [1], [0], [0], [0]])
-ket_10 = np.asarray([[0], [0], [0], [0], [0], [1], [0], [0]])
-ket_01 = np.asarray([[0], [0], [0], [0], [0], [0], [1], [0]])
-ket_00 = np.asarray([[0], [0], [0], [0], [0], [0], [0], [1]])
+ket_r1 = np.asarray([[1], [0], [0], [0], [0], [0], [0], [0]], dtype=complex)
+ket_1r = np.asarray([[0], [1], [0], [0], [0], [0], [0], [0]], dtype=complex)
+ket_r0 = np.asarray([[0], [0], [1], [0], [0], [0], [0], [0]], dtype=complex)
+ket_0r = np.asarray([[0], [0], [0], [1], [0], [0], [0], [0]], dtype=complex)
+ket_11 = np.asarray([[0], [0], [0], [0], [1], [0], [0], [0]], dtype=complex)
+ket_10 = np.asarray([[0], [0], [0], [0], [0], [1], [0], [0]], dtype=complex)
+ket_01 = np.asarray([[0], [0], [0], [0], [0], [0], [1], [0]], dtype=complex)
+ket_00 = np.asarray([[0], [0], [0], [0], [0], [0], [0], [1]], dtype=complex)
 
 bra_00 = ket_00.conjugate().transpose()
 bra_01 = ket_01.conjugate().transpose()
@@ -78,8 +78,8 @@ def hamiltonian_TwoDress (h_params):
     H_TwoDress = -(DeltaRa + DeltaMWa + DeltaMWb) * ket_r1 * bra_r1 \
         -(DeltaRb + DeltaMWa + DeltaMWb) * ket_1r * bra_1r \
         -(DeltaMWa + DeltaMWb) * ket_11 * bra_11 \
-        + OmegaRa / 2 * (ket_11 * bra_r1 + ket_r1 * bra_11) \
-        + OmegaRb / 2 * (ket_r1 * bra_11 + ket_11 * bra_r1)
+        + OmegaRa / 2 * (ket_r1 * bra_11 + ket_11 * bra_r1) \
+        + OmegaRb / 2 * (ket_1r * bra_11 + ket_11 * bra_1r)
 
     return H_TwoDress
 
@@ -111,7 +111,7 @@ def hamiltonian_OneDress (h_params):
         -(DeltaRb + DeltaMWb) * ket_0r * bra_0r \
         - DeltaMWa * ket_10 * bra_10 \
         - DeltaMWb * ket_01 * bra_01 \
-        + OmegaRa / 2 * (ket_10 * bra_r0 + ket_r0 * bra_10) \
+        + OmegaRa / 2 * (ket_r0 * bra_10 + ket_10 * bra_r0) \
         + OmegaRb / 2 * (ket_0r * bra_01 + ket_01 * bra_0r)
         
     return H_OneDress
