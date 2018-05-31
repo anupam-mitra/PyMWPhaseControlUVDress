@@ -160,7 +160,7 @@ def adiabaticrydbergdressing_propagator_detuningsweep(adiabatic_params):
             rydbergatoms.hamiltonian_PerfectBlockade(0, h_params_undress)
         propagators_undress[:, :, n] = expm(-1j * Tstep * hamiltonians_undress[:, :, n])
 
-        propagator_cumulative_undress = np.dot(propagators_dress[:, :, n], propagator_cumulative_undress)
+        propagator_cumulative_undress = np.dot(propagators_undress[:, :, n], propagator_cumulative_undress)
 
 
     return propagator_cumulative_dress, propagator_cumulative_undress
