@@ -103,7 +103,7 @@ def infidelity_unitary(phi, control_params):
     F_average += F
     
     I_average = 1 - F_average
-    return F_average
+    return I_average
 
 def infidelity_unitary_gradient (phi, control_params):
     """
