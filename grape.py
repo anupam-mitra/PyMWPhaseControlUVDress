@@ -60,26 +60,33 @@ def grape (control_problem, debug=False, gtol=1e-4):
     elif initialization == 'Constant':
         phi_initial = np.zeros(Nsteps)
     elif initialization == 'Sine':
-        phi_initial = pi/2 * np.sin(2*pi*np.linspace(0, 2, Nsteps))
+        phi_initial = pi * (1 + np.sin(2*pi*np.linspace(0, 2, Nsteps)))
         
-    result = scipy.optimize.fmin_bfgs(\
-                cost_function, phi_initial, cost_function_grad, \
-                gtol=gtol, maxiter=None, retall=True, full_output=True,
-                args=(control_problem,))
+    result = scipy.optimize.minimize(\
+                                     fun=cost_function, x0=phi_initial, jac=True, method='BFGS', \
+                                     options={'gtol': gtol, 'maxiter': 4096,}, \
+                                     args=(control_problem,))
 
-    (phi_opt, infidelity_min, dinfidelity_opt, ddinfidelity_opt, func_calls, \
-     grad_calls, warnflag, allvects) = result
+    phi_des = result.x
+    infidelity_min = result.fun
+    dinfidelity_min = result.jac
+    status = result.status
+    Niterations = result.nit
+
+    #(phi_opt, infidelity_min, dinfidelity_opt, ddinfidelity_opt, func_calls, \
+    # grad_calls, warnflag, allvects) = result
      
     if debug:
-         print('# dinfidelity_opt = %s\n # infidelity_min = %g\n' % (dinfidelity_opt, infidelity_min))
+         print('# dinfidelity_min = %s\n # infidelity_min = %g\n' % (dinfidelity_min, infidelity_min))
 
     results = {\
-        'PhiInitial': phi_initial, \
-        'PhiOptimized' : phi_opt, \
-        'InfidelityMin' : infidelity_min, \
-        'InfidelityMinGradient' : dinfidelity_opt, \
+               'PhiInitial': phi_initial, \
+               'PhiOptimized' : phi_des, \
+               'InfidelityMin' : infidelity_min, \
+               'InfidelityMinGradient' : dinfidelity_min, \
+               'Niterations' : Niterations, \
     }
     
     control_problem['Results'] = results
      
-    return phi_opt, infidelity_min
+    return phi_des, infidelity_min
