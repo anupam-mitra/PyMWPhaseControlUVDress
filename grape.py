@@ -61,7 +61,7 @@ def grape (control_problem, debug=False, gtol=1e-4):
         phi_initial = np.zeros(Nsteps)
     elif initialization == 'Sine':
         phi_initial = pi/2 * np.sin(2*pi*np.linspace(0, 2, Nsteps))
-    
+        
     result = scipy.optimize.fmin_bfgs(\
                 cost_function, phi_initial, cost_function_grad, \
                 gtol=gtol, maxiter=None, retall=True, full_output=True,
@@ -73,5 +73,13 @@ def grape (control_problem, debug=False, gtol=1e-4):
     if debug:
          print('# dinfidelity_opt = %s\n # infidelity_min = %g\n' % (dinfidelity_opt, infidelity_min))
 
+    results = {\
+        'PhiInitial': phi_initial, \
+        'PhiOptimized' : phi_opt, \
+        'InfidelityMin' : infidelity_min, \
+        'InfidelityMinGradient' : dinfidelity_opt, \
+    }
+    
+    control_problem['Results'] = results
      
     return phi_opt, infidelity_min

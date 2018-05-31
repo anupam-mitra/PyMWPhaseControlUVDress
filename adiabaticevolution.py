@@ -3,7 +3,7 @@
 #
 #  adibaticevolution.py
 #  
-#  Copyright 2017 Anupam Mitra <anupam@unm.edu>
+#  Copyright 2018 Anupam Mitra <anupam@unm.edu>
 #  
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -25,70 +25,115 @@
 import numpy as np
 import scipy
 
+from numpy import exp, sin, cos, tan, arctan2
 from scipy.linalg import expm
 
 import rydbergatoms
 
-def compute_adiabaticRydbergDressing_propagator(adiabatic_params):
+
+"""
+We compute adiabatic evolution for different cases. We first consider a variant
+of rapid adiabatic passage, where keeping the Rabi frequency fixed, we sweep
+to near resonance
+
+
+"""
+
+def adiabaticrydbergdressing_propagator_detuningsweep(adiabatic_params):
     """
     Computes the propagator for an adiabatic evolution where the 
-    Hamiltonian is adiabatically changed from one Hamiltonian to another
-
+    Hamiltonian is adiabatically changed from one Hamiltonian to another.
+    
+    This is a variant
+	of rapid adiabatic passage, where keeping the Rabi frequency fixed, we sweep
+	to near resonance
+    
     Parameters
     ----------
             
     adiabatic_params:
         Parameters to use for adiabatic evolution
+        
+
+    Returns
+    -------
     
+    propagator_cumulative_dress:
+        Propagator for the adiabatic dressing
+        
+    propagator_cumulative_undress:
+        Propagator for the adiabatic undressing
     """
     
-    Nsteps = adiabatic_params.get('Nsteps')
     Tstep = adiabatic_params.get('Tstep')
-    Tcontrol = adiabatic_params.get('Tcontrol')
+    Tsweepfactor = adiabatic_params.get('TSweepFactor')
+    tinitial = adiabatic_params.get('tinitial')
+    tfinal = adiabatic_params.get('tfinal')
+        
+    t_dress_initial = tinitial
+    t_dress_final = 0
+    t_undress_initial = 0
+    t_undress_final = tfinal
+    
     Ndim = adiabatic_params.get('DimensionHilbertSpace')
     
     hamiltonian_func = adiabatic_params.get('HamiltonianMatrix')
     hamiltonian_grad_func = adiabatic_params.get('HamiltonianMatrixGradient')
     
-    h_params = propagator_params.get('HamiltonianParameters')
+    h_params = adiabatic_params.get('HamiltonianParameters')
 
+    t_dress = np.arange(t_dress_initial, t_dress_final + Tstep, Tstep)
+    t_undress = np.arange(t_undress_initial, t_undress_final + Tstep, Tstep)
+    
+    # Linear Theta Ramp
+    small_angle = adiabatic_params.get('SmallAngle')
+    if small_angle == None:
+        small_angle = 1/128
+        
+    DeltaRa = h_params.get('DeltaRa')
+    DeltaRb = h_params.get('DeltaRb')
+    OmegaRa = h_params.get('OmegaRa')
+    OmegaRb = h_params.get('OmegaRb')
+    
+    thetaRa = arctan2(OmegaRa, -DeltaRa)
+    thetaRb = arctan2(OmegaRb, -DeltaRb)
+    
+    thetaRa_dress = (small_angle + \
+        (t_dress - t_dress_initial) / (t_dress_final - t_dress_initial) \
+            * (1 - 2 * small_angle)) * thetaRa
+    
+    thetaRa_undress = np.flip(thetaRa_dress, axis=0)
+    
+    thetaRb_dress = (small_angle + \
+        (t_undress - t_dress_initial) / (t_dress_final - t_dress_initial) \
+            * (1 - 2 * small_angle)) * thetaRb
+    
+    thetaRb_undress = np.flip(thetaRb_dress, axis=0)
+
+    OmegaRa_dress = DeltaRa / tan(thetaRa_dress)
+    OmegaRb_dress = DeltaRb / tan(thetaRb_dress)
+
+    OmegaRa_undress = DeltaRa / tan(thetaRa_undress)
+    OmegaRb_undress = DeltaRb / tan(thetaRb_undress)
+
+    Nsteps = thetaRa_undress.shape[0]
+    
     hamiltonians_dress = np.empty((Ndim, Ndim, Nsteps), dtype=complex)
     propagators_dress = np.empty((Ndim, Ndim, Nsteps), dtype=complex)
-    propagator_cumulative_dress = np.identity(Nsteps)
+    propagator_cumulative_dress = np.identity(Ndim)
 
     hamiltonians_undress = np.empty((Ndim, Ndim, Nsteps), dtype=complex)
     propagators_undress = np.empty((Ndim, Ndim, Nsteps), dtype=complex)
-    propagator_cumulative_undress = np.identity(Nsteps)
-
-    t_dress_initial = -8*Tsweep
-    t_dress_final = 0
-    t_undress_initial = 0
-    t_dress_final = +8*Tsweep
+    propagator_cumulative_undress = np.identity(Ndim)
     
-    t_dress = np.arange(t_dress_initial, t_dress_final + Tstep, Tstep)
-    t_undress = np.arange(t_undress_initial, t_undress_final + Tstep, Tstep)
-
-    DeltaRa_dress = DeltaRa * (2 - 1*exp(-(t_dress/Tsweep)**2/2))
-    OmegaRa_dress = OmegaRa * (0 + 1*exp(-(t_dress/Tsweep)**2/2))
-
-    DeltaRb_dress = DeltaRb * (2 - 1*exp(-(t_dress/Tsweep)**2/2))
-    OmegaRb_dress = OmegaRb * (0 + 1*exp(-(t_dress/Tsweep)**2/2))
-
-    DeltaRa_undress = DeltaRa * (2 - 1*exp(-(t_undress/Tsweep)**2/2))
-    OmegaRa_undress = OmegaRa * (0 + 1*exp(-(t_undress/Tsweep)**2/2))
-
-    DeltaRb_undress = DeltaRb * (2 - 1*exp(-(t_undress/Tsweep)**2/2))
-    OmegaRb_undress = OmegaRb * (0 + 1*exp(-(t_undress/Tsweep)**2/2))
-
-
     for n in range(Nsteps):
         h_params_dress = {\
             'OmegaRa' : OmegaRa_dress[n], \
             'OmegaRb' : OmegaRb_dress[n], \
             'OmegaMWa' : 0, \
             'OmegaMWb' : 0, \
-            'DeltaRa' : DeltaRa_dress[n], \
-            'DeltaRb' : DeltaRa_dress[b], \
+            'DeltaRa' : DeltaRa, \
+            'DeltaRb' : DeltaRb, \
             'DeltaMWa' : 0.01, \
             'DeltaMWb' : 0.01, \
         }
@@ -98,8 +143,8 @@ def compute_adiabaticRydbergDressing_propagator(adiabatic_params):
             'OmegaRb' : OmegaRb_undress[n], \
             'OmegaMWa' : 0, \
             'OmegaMWb' : 0, \
-            'DeltaRa' : DeltaRa_undress[n], \
-            'DeltaRb' : DeltaRa_undress[b], \
+            'DeltaRa' : DeltaRa, \
+            'DeltaRb' : DeltaRb, \
             'DeltaMWa' : 0.01, \
             'DeltaMWb' : 0.01, \
         }

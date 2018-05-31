@@ -27,6 +27,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn
 
+from numpy import pi
+
 def plot_pwc_controlwaveform(phi, Nsteps, Tstep, fig=None, ax=None, titlestring=None, outfilename=None):
     """
     Plots a piecewise constant control waveform returned
@@ -50,8 +52,8 @@ def plot_pwc_controlwaveform(phi, Nsteps, Tstep, fig=None, ax=None, titlestring=
         ax=axes
 
     ax.step(np.arange(Nsteps+1)*Tstep/(np.pi), \
-            np.concatenate([phi, [phi[-1]]]), \
-            where='post', lw=1)
+            np.concatenate([phi, [phi[-1]]])/pi, \
+            where='post', lw=0.25)
     
     '''
     # Decorations: phi is between 0 and 2*pi
@@ -74,13 +76,17 @@ def plot_pwc_controlwaveform(phi, Nsteps, Tstep, fig=None, ax=None, titlestring=
         ax.set_title(title_str)
     '''
     if titlestring != None:
-        ax.set_title(titlestring, fontdict={'size': 16})
+        ax.set_title(titlestring, fontdict={'size': 8})
     
-    ax.set_xlabel(r'$\Omega t / \pi$', fontdict={'size': 16})
-    ax.set_ylabel(r'$\phi$', fontdict={'size': 16})
-    ax.tick_params(labelsize=16)
+    '''
+    ax.set_xlabel(r'$\Omega t / \pi$', fontdict={'size': 8})
+    ax.set_ylabel(r'$\phi/\pi$', fontdict={'size': 8})
+    ax.tick_params(labelsize=8)
+    
+    ax.set_ylim(-1, 1)
     
     plt.tight_layout()
-
+	'''
+	
     if outfilename != None:
         fig.savefig(outfilename, filetype='pdf', bboxinches='tight', dpi=1024)

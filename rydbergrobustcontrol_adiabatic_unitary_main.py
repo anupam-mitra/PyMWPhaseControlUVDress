@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#  rydbergrobustcontrol_adiabatic_unitary_main.py
+#  rydbergrobust_control_dressed_unitary_main.py
 #  
 #  Copyright 2017 Anupam Mitra <anupam@unm.edu>
 #  
@@ -28,6 +28,7 @@ import numpy as np
 import rydbergatoms
 import grape
 import robustcostfunctions
+import robustadiabaticcostfunctions
 
 from numpy import sqrt, pi, arctan2, cos, sin
 
@@ -50,11 +51,7 @@ hamiltonian_base_parameters = {
 }
 
 hamiltonian_uncertain_parameters = {
-    'ListUncertainParameters': ['DeltaRa', 'DeltaRb'], \
-    'Uncertainties' : {
-        'DeltaRa' : [-1/20, 0, 1/20], \
-        'DeltaRb' : [-1/20, 0, 1/20], \
-    }\
+    'deltaDeltaRValues' : [-1/20, -1/20]
 }
 
 Nsteps_PiPulse = 4
@@ -79,11 +76,44 @@ control_problem = {
     'Initialization' : 'Constant', \
     'UnitaryTarget': u_target, \
     'PropagatorParameters': propagator_parameters, \
-    'CostFunction' : robustcostfunctions.infidelity_unitary, \
-    'CostFunctionGrad' : robustcostfunctions.infidelity_unitary_gradient, \
+    'CostFunction' : robustadiabaticcostfunctions.infidelity_unitary, \
+    'CostFunctionGrad' : robustadiabaticcostfunctions.infidelity_unitary_gradient, \
     'HamiltonianBaseParameters' : hamiltonian_base_parameters, \
     'HamiltonianUncertainParameters' : hamiltonian_uncertain_parameters, \
 }
 
+adiabatic_parameters = {
+    'DimensionHilbertSpace' : 8,\
+    'Tstep' : pi / 16, \
+    'TSweepFactor' : 16, \
+    'tinitial': - 1024*pi, \
+    'tfinal': + 1024*pi, \
+    'HamiltonianMatrix' : rydbergatoms.hamiltonian_PerfectBlockade,
+    'HamiltonianParameters' : hamiltonian_parameters,
+}
+
 if __name__ == '__main__':
+    # Calculated dressing unitary for different parameters
+    deltaR_values = hamiltonian_uncertain_parameters.get('deltaDeltaRValues')
+    DeltaR = hamiltonian_base_parameters.get('DeltaR')
+
+    u_dress_dict = {}
+    u_undress_dict = {}
+    
+    for deltaRa, deltaRb in itertools.product(deltaR_values, deltaR_values):
+        
+        adiabatic_parameters['HamiltonianParameters']['DeltaRa'] \
+        = DeltaR + deltaRa
+        adiabatic_parameters['HamiltonianParameters']['DeltaRb'] \
+        = DeltaR + deltaRb
+    
+        u_dress, u_undress = \
+            adiabaticevolution.adiabaticrydbergdressing_propagator_detuningsweep(adiabatic_parameters)
+
+        u_dress_dict[(deltaRa, deltaRb)] = u_dress
+        u_undress_dict[(deltaRa, deltaRb)] = u_undress
+    
+    control_problem['UnitaryDressing'] =  u_dress_dict
+    control_problem['UnitaryUndressing'] = u_undress_dict
+    
     phi_opt, infidelity_min = grape.grape(control_problem, debug=True, gtol=1e-5)
