@@ -130,7 +130,7 @@ def hamiltonian_MW (phi, h_params):
     
     Returns
     -------
-    H_TwoDress:
+    H_MW:
     The hamiltonian matrix
     """
     DeltaRa = h_params['DeltaRa']
