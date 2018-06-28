@@ -47,7 +47,7 @@ def check_unitary(u):
 
 def check_hermitian(h):
     """
-    Checks if a matrix is unitary
+    Checks if a matrix is hermitian
     
     Parameters
     ----------
