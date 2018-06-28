@@ -24,96 +24,191 @@
 
 from __future__ import division
 
+import copy
 import numpy as np
-import rydbergatoms
+import scipy.linalg
+import sys, os, pickle
+
+import datetime, time, uuid
+
+from numpy import pi, sqrt, sin, cos, sign, exp, arctan2
+from scipy.linalg import expm
+
+PROGRAMS_DIR = os.path.expanduser('~/PyQuantumControl/')
+OUTPUT_DIR = os.path.expanduser('~/RydbergGates/output/')
+
+sys.path.append(PROGRAMS_DIR)
+
+import adiabaticevolution
 import grape
-import robustcostfunctions
+import rydbergatoms
 import robustadiabaticcostfunctions
 
-from numpy import sqrt, pi, arctan2, cos, sin
-
 hamiltonian_parameters = {
-    'OmegaRa' : 1, \
-    'OmegaRb' : 1, \
-    'OmegaMWa' : 1, \
-    'OmegaMWb' : 1, \
-    'DeltaRa' : 0.01, \
-    'DeltaRb' : 0.01, \
-    'DeltaMWa' : 0.01, \
-    'DeltaMWb' : 0.01, \
+    'OmegaRa' : 2*pi*4, \
+    'OmegaRb' : 2*pi*4, \
+    'OmegaMWa' : 2*pi*4, \
+    'OmegaMWb' : 2*pi*4, \
+    'DeltaRa' : 2*pi*2, \
+    'DeltaRb' : 2*pi*2, \
+    'DeltaMWa' : -2*pi*1, \
+    'DeltaMWb' : -2*pi*1, \
 }
 
 hamiltonian_base_parameters = {
-    'OmegaR' : 1, \
-    'OmegaMW' : 1, \
-    'DeltaR' : 0.01, \
-    'DeltaMW' : 0.01, \
+    'OmegaR' : 2*pi * 4, \
+    'OmegaMW' : 2*pi * 4, \
+    'DeltaR' : 2*pi * 2, \
+    'DeltaMW' : 0, \
 }
 
-hamiltonian_uncertain_parameters = {
-    'deltaDeltaRValues' : [-1/20, -1/20]
-}
+hamiltonian_landmarks_list = [\
+    {\
+        'DeltaRa': 2*pi * 2.1, \
+        'DeltaRb': 2*pi * 2.1, \
+    }, \
+    {\
+        'DeltaRa': 2*pi * 1.9, \
+        'DeltaRb': 2*pi * 1.9, \
+    }, \
+    {\
+        'DeltaRa': 2*pi * 2.1, \
+        'DeltaRb': 2*pi * 1.9, \
+    }, \
+    {\
+        'DeltaRa': 2*pi * 2.0, \
+        'DeltaRb': 2*pi * 2.0, \
+    }
+]
 
-Nsteps_PiPulse = 4
+
+Tpi = pi/hamiltonian_base_parameters['OmegaMW']
+Nsteps_PiPulse = 8
+N_PiPulses = 32
+Nsteps = Nsteps_PiPulse * N_PiPulses
+Tstep = Tpi / Nsteps_PiPulse
+Tcontrol = Nsteps * Tstep 
 
 propagator_parameters = {
     'HamiltonianParameters' : hamiltonian_parameters, \
     'HamiltonianMatrix' : rydbergatoms.hamiltonian_PerfectBlockade, \
     'HamiltonianMatrixGradient' : rydbergatoms.hamiltonian_grad_PerfectBlockade, \
-    'Nsteps' : 64 * Nsteps_PiPulse, \
-    'Tstep' : pi / Nsteps_PiPulse, \
-    'Tcontrol' : 64 * pi, \
+    'Nsteps' : Nsteps, \
+    'Tstep' : Tstep, \
+    'Tcontrol' :  Tcontrol, \
 }
 
 u_target = rydbergatoms.ket_00 * rydbergatoms.bra_00 \
-         + rydbergatoms.ket_01 * rydbergatoms.bra_01 \
-         + rydbergatoms.ket_10 * rydbergatoms.bra_10 \
+         - rydbergatoms.ket_01 * rydbergatoms.bra_01 \
+         - rydbergatoms.ket_10 * rydbergatoms.bra_10 \
          - rydbergatoms.ket_11 * rydbergatoms.bra_11
 
 control_problem = {
     'ControlTask' : 'UnitaryMap', \
-    'Initialization' : 'Random', \
-    'Initialization' : 'Constant', \
+    'Initialization' : 'Sine', \
     'UnitaryTarget': u_target, \
     'PropagatorParameters': propagator_parameters, \
     'CostFunction' : robustadiabaticcostfunctions.infidelity_unitary, \
-    'CostFunctionGrad' : robustadiabaticcostfunctions.infidelity_unitary_gradient, \
     'HamiltonianBaseParameters' : hamiltonian_base_parameters, \
-    'HamiltonianUncertainParameters' : hamiltonian_uncertain_parameters, \
+    'HamiltonianLandmarks': hamiltonian_landmarks_list,
 }
 
 adiabatic_parameters = {
-    'DimensionHilbertSpace' : 8,\
-    'Tstep' : pi / 16, \
-    'TSweepFactor' : 16, \
-    'tinitial': - 1024*pi, \
-    'tfinal': + 1024*pi, \
-    'HamiltonianMatrix' : rydbergatoms.hamiltonian_PerfectBlockade,
-    'HamiltonianParameters' : hamiltonian_parameters,
+    't_gaussian_width' : 0.25, \
+    'DeltaMW' : 0, \
+    'DeltaR_min': 2*pi * 2, \
+    'DeltaR_max': 2*pi * 10, \
+    'OmegaR_min': 0, \
+    'OmegaR_max': 2*pi * 4, \
+    'HamiltonianMatrix' : rydbergatoms.hamiltonian_PerfectBlockade, \
+    'DimensionHilbertSpace': 8, \
+    'Nsteps': 1024,
 }
 
-if __name__ == '__main__':
-    # Calculated dressing unitary for different parameters
-    deltaR_values = hamiltonian_uncertain_parameters.get('deltaDeltaRValues')
-    DeltaR = hamiltonian_base_parameters.get('DeltaR')
+# Starting
+# Start
+time_stamp = time.time()
+time_string = datetime.datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
+print("%s: Starting simulation for Tstep=%gns; Nsteps=%d, Tcontrol=%gns" % (time_string, Tstep*1e3, Nsteps, Tcontrol*1e3))
 
-    u_dress_dict = {}
-    u_undress_dict = {}
+
+# Calculating the adiabatic dressing and undressing unitaries
+time_stamp = time.time()
+time_string = datetime.datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
+print("%s: Calculating adiabatic dressing and undressing unitaries" %  time_string)
     
-    for deltaRa, deltaRb in itertools.product(deltaR_values, deltaR_values):
+u_dress_dict = {}
+u_undress_dict = {}
+
+Nlandmarks = len(hamiltonian_landmarks_list)
+DeltaR = hamiltonian_base_parameters['DeltaR']
+
+adiabatic_parameters_current = copy.deepcopy(adiabatic_parameters)
+
+for l in range(Nlandmarks):
+    hamiltonian_landmark_current = hamiltonian_landmarks_list[l]
+    
+    DeltaRa = hamiltonian_landmark_current.get('DeltaRa')
+    DeltaRb = hamiltonian_landmark_current.get('DeltaRb')
+
+    adiabatic_parameters_current['DeltaRa_min'] \
+        = adiabatic_parameters['DeltaR_min'] + (DeltaRa - DeltaR)
+
+    adiabatic_parameters_current['DeltaRa_max'] \
+        = adiabatic_parameters['DeltaR_max'] + (DeltaRa - DeltaR)
         
-        adiabatic_parameters['HamiltonianParameters']['DeltaRa'] \
-        = DeltaR + deltaRa
-        adiabatic_parameters['HamiltonianParameters']['DeltaRb'] \
-        = DeltaR + deltaRb
-    
-        u_dress, u_undress = \
-            adiabaticevolution.adiabaticrydbergdressing_propagator_detuningsweep(adiabatic_parameters)
+    adiabatic_parameters_current['DeltaRb_min'] \
+        = adiabatic_parameters['DeltaR_min'] + (DeltaRb - DeltaR)
 
-        u_dress_dict[(deltaRa, deltaRb)] = u_dress
-        u_undress_dict[(deltaRa, deltaRb)] = u_undress
+    adiabatic_parameters_current['DeltaRb_max'] \
+        = adiabatic_parameters['DeltaR_max'] + (DeltaRb - DeltaR)
     
-    control_problem['UnitaryDressing'] =  u_dress_dict
-    control_problem['UnitaryUndressing'] = u_undress_dict
-    
-    phi_opt, infidelity_min = grape.grape(control_problem, debug=True, gtol=1e-5)
+    u_dress, u_undress = \
+        adiabaticevolution.adiabatic_evolution_propagators(adiabatic_parameters)
+
+    u_dress_dict[(DeltaRa, DeltaRb)] = u_dress
+    u_undress_dict[(DeltaRa, DeltaRb)] = u_undress
+
+# Adding the adiabatic dressing and undressing unitaries to the 
+# control_problem dictionary
+control_problem['UnitaryDressing'] =  u_dress_dict
+control_problem['UnitaryUndressing'] = u_undress_dict
+
+# Executing GRAPE for quantum optimal control using microwave phase
+time_stamp = time.time()
+time_string = datetime.datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
+print("%s: Optimizing microwave phase forms" %  time_string)
+
+phi_opt, infidelity_min = grape.grape(control_problem, debug=True, gtol=1e-5)
+
+# Save the execution into a file who name is determined by a time string
+# and a uuid
+time_stamp = time.time()
+time_string = datetime.datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
+print("%s: Saving simulation data" %  time_string)
+
+if not os.path.isdir(outputdir):
+    os.mkdir(outputdir)
+
+time_stamp = time.time()
+time_string = datetime.datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d--%H-%M-%S')
+
+filename = time_string + '--' + str(uuid.uuid4()) + '.pkl'
+outputfile = open(os.path.join(outputdir, filename), 'wb')
+
+simulation_data = {\
+    'time_string': time_string, \
+    'hamiltonian_parameters': hamiltonian_parameters, \
+    'hamiltonian_base_parameters': hamiltonian_base_parameters, \
+    'hamiltonian_landmarks_list': hamiltonian_landmarks_list, \
+    'control_problem': control_problem, \
+    'propagator_parameters': propagator_parameters, \
+}
+
+pickle.dump(simulation_data, outputfile)
+outputfile.close()
+
+# Finished
+time_stamp = time.time()
+time_string = datetime.datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
+print("%s: Finished" %  time_string)

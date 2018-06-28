@@ -51,7 +51,7 @@ def plot_pwc_controlwaveform(phi, Nsteps, Tstep, fig=None, ax=None, titlestring=
         fig, axes = plt.subplots(1, 1)
         ax=axes
 
-    ax.step(np.arange(Nsteps+1)*Tstep/(np.pi), \
+    ax.step(np.arange(Nsteps+1)*Tstep, \
             np.concatenate([phi, [phi[-1]]])/pi, \
             where='post', lw=0.25)
     

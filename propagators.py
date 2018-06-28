@@ -166,11 +166,27 @@ def propagator (phi, propagator_params):
 
     h_steps = [hamiltonian_func(phi[n], h_params) for n in range(Nsteps)]    
     u_steps = [expm(-1j*Tstep*h) for h in h_steps]
+    h_grad_steps = [hamiltonian_grad_func(phi[n], h_params) for n in range(Nsteps)]
         
     dimensions = h_steps[0].shape[0]
     u = np.identity(dimensions, dtype=complex)
     
     for n in range(Nsteps):
         u = np.dot(u_steps[n], u)
-           
-    return u
+
+        u_gradient = []
+    
+    for n in range(Nsteps):
+        u_gradient.append(np.identity(dimensions, dtype=complex))
+        
+        for m in range(n):
+            u_gradient[n] = np.dot(u_steps[m], u_gradient[n])
+        
+        u_step_derivative = propagator_step_derivative(\
+                                        h_steps[n], h_grad_steps[n], Tstep)
+        u_gradient[n] = np.dot(u_step_derivative, u_gradient[n])
+        
+        for m in range(n+1, Nsteps):
+            u_gradient[n] = np.dot(u_steps[m], u_gradient[n])
+
+    return u, u_gradient

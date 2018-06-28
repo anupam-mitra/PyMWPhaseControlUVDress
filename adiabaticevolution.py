@@ -160,8 +160,186 @@ def adiabaticrydbergdressing_propagator_detuningsweep(adiabatic_params):
             rydbergatoms.hamiltonian_PerfectBlockade(0, h_params_undress)
         propagators_undress[:, :, n] = expm(-1j * Tstep * hamiltonians_undress[:, :, n])
 
-        propagator_cumulative_undress = np.dot(propagators_dress[:, :, n], propagator_cumulative_undress)
+        propagator_cumulative_undress = np.dot(propagators_undress[:, :, n], propagator_cumulative_undress)
 
 
     return propagator_cumulative_dress, propagator_cumulative_undress
     
+
+def adiabatic_evolution_propagators (adiabatic_parameters):
+    """
+    Computes the propagator for an adiabatic evolution where the 
+    Hamiltonian is adiabatically changed from one Hamiltonian to another.
+    
+    The detuning is swept linearly towards resonance and the the Rabi
+    frequency is swept from 0 to a maximum value as a Gaussian during
+    dressing.
+
+    The detuning is swept linearly away from resonance and the the Rabi
+    frequency is swept from a maximum value to 0 as a Gaussian during
+    undressing.
+
+    # A better way to perform compute this propagator is as follows
+    # Use scipy.integrate.ode to inegrate the time dependent Schrodinger
+    # equation for the dressing to obtain the dressing unitary u_dress
+    # and for the undressing unitary to obtain the undressing unitary
+    # u_undress
+
+    Parameters
+    ----------
+            
+    adiabatic_parameters:
+        Parameters to use for adiabatic evolution
+        
+
+    Returns
+    -------
+    
+    propagator_cumulative_dress:
+        Propagator for the adiabatic dressing
+        
+    propagator_cumulative_undress:
+        Propagator for the adiabatic undressing
+    """
+
+    t_gaussian_width = adiabatic_parameters['t_gaussian_width']
+    DeltaMW = adiabatic_parameters['DeltaMW']
+
+    DeltaRa_min = adiabatic_parameters['DeltaR_min']
+    DeltaRa_max = adiabatic_parameters['DeltaR_max']
+
+    DeltaRb_min = adiabatic_parameters['DeltaR_min']
+    DeltaRb_max = adiabatic_parameters['DeltaR_max']
+
+    OmegaR_min = adiabatic_parameters['OmegaR_min']
+    OmegaR_max = adiabatic_parameters['OmegaR_max']
+
+    Ndim = adiabatic_parameters['DimensionHilbertSpace']
+    
+    Nsteps = adiabatic_parameters.get('Nsteps')
+    if Nsteps == None:
+        Nsteps = 1024
+
+    hamiltonian_func = adiabatic_parameters.get('HamiltonianMatrix')
+
+    t_dress_begin = - 4 * t_gaussian_width
+    t_dress_end = 0
+    t_undress_begin = 0
+    t_undress_end = 4 * t_gaussian_width
+
+    t_dress = np.linspace(t_dress_begin, t_dress_end, num=Nsteps)
+    t_undress = np.linspace(t_undress_begin, t_undress_end, num=Nsteps)
+
+    Tstep = (t_dress_end - t_dress_begin)/Nsteps
+    
+    OmegaRa_t_dress = OmegaR_min + (OmegaR_max - OmegaR_min) \
+                * exp(-(t_dress - t_dress_end) / 2 / t_gaussian_width**2)
+
+    OmegaRb_t_dress = OmegaR_min + (OmegaR_max - OmegaR_min) \
+                * exp(-(t_dress - t_dress_end) / 2 / t_gaussian_width**2)
+
+    DeltaRa_t_dress = DeltaRa_max + \
+            (DeltaRa_min - DeltaRa_max) / (t_dress_end - t_dress_begin) \
+            * (t_dress - t_dress_begin)
+
+    DeltaRb_t_dress = DeltaRb_max + \
+            (DeltaRb_min - DeltaRb_max) / (t_dress_end - t_dress_begin) \
+            * (t_dress - t_dress_begin)
+
+    OmegaRa_t_undress = OmegaR_min + (OmegaR_max - OmegaR_min) \
+                * exp(-(t_undress - t_undress_begin) / 2 / t_gaussian_width**2)
+
+    OmegaRb_t_undress = OmegaR_min + (OmegaR_max - OmegaR_min) \
+                * exp(-(t_undress - t_undress_begin) / 2 / t_gaussian_width**2)
+
+    DeltaRa_t_undress = DeltaRa_min + \
+            (DeltaRa_max - DeltaRa_min) / (t_undress_end - t_undress_begin) \
+                      * (t_undress - t_undress_begin)
+
+    DeltaRb_t_undress = DeltaRb_min + \
+            (DeltaRb_max - DeltaRb_min) / (t_undress_end - t_undress_begin) \
+            * (t_undress - t_undress_begin)
+
+    hamiltonians_dress = np.empty((Ndim, Ndim, Nsteps), dtype=complex)
+    propagators_dress = np.empty((Ndim, Ndim, Nsteps), dtype=complex)
+    propagator_cumulative_dress = np.identity(Ndim)
+
+    hamiltonians_undress = np.empty((Ndim, Ndim, Nsteps), dtype=complex)
+    propagators_undress = np.empty((Ndim, Ndim, Nsteps), dtype=complex)
+    propagator_cumulative_undress = np.identity(Ndim)
+    
+    
+    for n in range(Nsteps):
+        h_params_dress = {\
+            'OmegaRa' : OmegaRa_t_dress[n], \
+            'OmegaRb' : OmegaRb_t_dress[n], \
+            'OmegaMWa' : 0, \
+            'OmegaMWb' : 0, \
+            'DeltaRa' : DeltaRa_t_dress[n], \
+            'DeltaRb' : DeltaRb_t_dress[n], \
+            'DeltaMWa' : DeltaMW, \
+            'DeltaMWb' : DeltaMW, \
+        }
+        
+        h_params_undress = {\
+            'OmegaRa' : OmegaRa_t_undress[n], \
+            'OmegaRb' : OmegaRb_t_undress[n], \
+            'OmegaMWa' : 0, \
+            'OmegaMWb' : 0, \
+            'DeltaRa' : DeltaRa_t_dress[n], \
+            'DeltaRb' : DeltaRb_t_dress[n], \
+            'DeltaMWa' : DeltaMW, \
+            'DeltaMWb' : DeltaMW, \
+        }
+
+        hamiltonians_dress[:, :, n] = \
+            rydbergatoms.hamiltonian_PerfectBlockade(0, h_params_dress)
+        propagators_dress[:, :, n] = \
+                        expm(-1j * Tstep * hamiltonians_dress[:, :, n])
+
+        propagator_cumulative_dress = \
+            np.dot(propagators_dress[:, :, n], propagator_cumulative_dress)
+        
+        hamiltonians_undress[:, :, n] = \
+            rydbergatoms.hamiltonian_PerfectBlockade(0, h_params_undress)
+        propagators_undress[:, :, n] = \
+            expm(-1j * Tstep * hamiltonians_undress[:, :, n])
+
+        propagator_cumulative_undress = \
+            np.dot(propagators_undress[:, :, n], propagator_cumulative_undress)
+
+    return propagator_cumulative_dress, propagator_cumulative_undress
+        
+
+def tdse_right_side (t, v, hamiltonian_function, hamiltonian_parameters):
+    """
+    Right side of the time dependent Schrodinger equation
+    
+    Parameters
+    ----------
+    t: time
+    
+    v: time evolution operator represented as a vector
+
+    hamiltonian_function: function which computes the Hamiltonian
+    matrix
+
+    hamiltonian_parameters: parameters for the Hamiltonian function
+    
+    Returns
+    -------
+    v_rhs: right side of the time dependent Schrodinger equation 
+    represented as a vector
+    """
+
+    h = hamiltonian_function(0, hamiltonian_parameters)
+
+    n_dimensions = np.shape(h)[0]
+
+    u = np.reshape(v, (n_dimensions, n_dimensions))
+
+    u_rhs = -1j * np.dot(h, u)
+
+    v_rhs = np.reshape(u_rhs, (n_dimensions * n_dimensions, ))
+
+    return v_rhs
