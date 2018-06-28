@@ -61,11 +61,13 @@ def infidelity_unitary(phi, control_params):
 
     """
 
-    h_inhomo = control_params['HamiltonianUncertainParameters']
+    ##h_inhomo = control_params['HamiltonianUncertainParameters']
+    ##deltaR_values = h_inhomo['deltaDeltaRValues']
     
-    deltaR_values = h_inhomo['deltaDeltaRValues']
+    hamiltonian_landmarks_list = control_params['HamiltonianLandmarks']
+    Nlandmarks = len(hamiltonian_landmarks_list)
     
-    Nterms_average = len(deltaR_values)**2
+    Nterms_average = Nlandmarks
     Nsteps = control_params['PropagatorParameters']['Nsteps']
     
     DeltaR = control_params['HamiltonianBaseParameters']['DeltaR']
@@ -88,18 +90,25 @@ def infidelity_unitary(phi, control_params):
         
     F_average = 0
     F_average_gradient = np.zeros(Nsteps)
-    for deltaRa, deltaRb in itertools.product(deltaR_values, deltaR_values):
-        
+
+    
+    ##for deltaRa, deltaRb in itertools.product(deltaR_values, deltaR_values):
+    for l in range(Nlandmarks):
+        hamiltonian_landmark_current = hamiltonian_landmarks_list[l]
+
+        DeltaRa = hamiltonian_landmark_current.get('DeltaRa')
+        DeltaRb = hamiltonian_landmark_current.get('DeltaRb')
+    
         control_params['PropagatorParameters']['HamiltonianParameters']['DeltaRa'] \
-        = DeltaR + deltaRa
+        = DeltaRa 
         control_params['PropagatorParameters']['HamiltonianParameters']['DeltaRb'] \
-        = DeltaR + deltaRb
+        = DeltaRb
       
         u, u_gradient  = propagators.propagator(phi, u_params)
         udagger = u.transpose().conjugate()
     
-        u_dress = u_dress_dict.get((deltaRa, deltaRb))
-        u_undress = u_dress_dict.get((deltaRa, deltaRb))
+        u_dress = u_dress_dict.get((DeltaRa, DeltaRb))
+        u_undress = u_dress_dict.get((DeltaRa, DeltaRb))
     
         u_protocol = np.dot(u_dress, np.dot(u, u_undress))
         u_protocol_dagger = np.conjugate(np.transpose(u_protocol))

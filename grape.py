@@ -31,7 +31,7 @@ import scipy.optimize
 
 from numpy import pi
 
-def grape (control_problem, debug=False, gtol=1e-4):
+def grape (control_problem, debug=False, gtol=1e-5):
     """
     Runs the Gradient Ascent Pulse Engineering Algorithm (GRAPE)
     to find a control sequence for quantum control
@@ -60,7 +60,7 @@ def grape (control_problem, debug=False, gtol=1e-4):
     elif initialization == 'Constant':
         phi_initial = np.zeros(Nsteps)
     elif initialization == 'Sine':
-        phi_initial = pi * (1 + np.sin(2*pi*np.linspace(0, 2, Nsteps)))
+        phi_initial = pi/2 * (1 + np.sin(2*pi*np.linspace(0, 2, Nsteps)))
         
     result = scipy.optimize.minimize(\
                                      fun=cost_function, x0=phi_initial, jac=True, method='BFGS', \
