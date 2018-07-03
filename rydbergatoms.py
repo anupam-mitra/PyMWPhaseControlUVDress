@@ -32,14 +32,14 @@ from numpy import exp
 Basis vectors for the eight dimensional Hilbert space
 in the perfect blockade limit
 """
-ket_r1 = np.asarray([[1], [0], [0], [0], [0], [0], [0], [0]], dtype=complex)
-ket_1r = np.asarray([[0], [1], [0], [0], [0], [0], [0], [0]], dtype=complex)
-ket_r0 = np.asarray([[0], [0], [1], [0], [0], [0], [0], [0]], dtype=complex)
-ket_0r = np.asarray([[0], [0], [0], [1], [0], [0], [0], [0]], dtype=complex)
-ket_11 = np.asarray([[0], [0], [0], [0], [1], [0], [0], [0]], dtype=complex)
-ket_10 = np.asarray([[0], [0], [0], [0], [0], [1], [0], [0]], dtype=complex)
-ket_01 = np.asarray([[0], [0], [0], [0], [0], [0], [1], [0]], dtype=complex)
-ket_00 = np.asarray([[0], [0], [0], [0], [0], [0], [0], [1]], dtype=complex)
+ket_r1 = np.asarray([[0], [0], [0], [0], [0], [0], [0], [1]], dtype=complex)
+ket_1r = np.asarray([[0], [0], [0], [0], [0], [0], [1], [0]], dtype=complex)
+ket_r0 = np.asarray([[0], [0], [0], [0], [0], [1], [0], [0]], dtype=complex)
+ket_0r = np.asarray([[0], [0], [0], [0], [1], [0], [0], [0]], dtype=complex)
+ket_11 = np.asarray([[0], [0], [0], [1], [0], [0], [0], [0]], dtype=complex)
+ket_10 = np.asarray([[0], [0], [1], [0], [0], [0], [0], [0]], dtype=complex)
+ket_01 = np.asarray([[0], [1], [0], [0], [0], [0], [0], [0]], dtype=complex)
+ket_00 = np.asarray([[1], [0], [0], [0], [0], [0], [0], [0]], dtype=complex)
 
 bra_00 = ket_00.conjugate().transpose()
 bra_01 = ket_01.conjugate().transpose()
@@ -212,3 +212,57 @@ def hamiltonian_grad_PerfectBlockade (phi, h_params):
           + 1j * OmegaMWb / 2 * (exp(1j*phi) * ket_00 * bra_01 - exp(-1j*phi) * ket_01 * bra_00)
 
     return dH_dphi
+
+def hamiltonian_spontaneous_emission (GammaR):
+    """
+    Computes the non Hermitian Hamiltonian matrix which represents
+    the decay of the Rydberg states.
+    
+    Paramters
+    ---------
+    GammaR: spontaneous emission rate of the Rydberg state
+    
+    Returns
+    -------
+    h_nonHerm: Non Hermitian Hamiltonian
+    """
+    
+    h_nonHerm = - 1j * GammaR * np.outer(ket_r1, bra_r1) \
+              - 1j * GammaR * np.outer(ket_1r, bra_1r) \
+              - 1j * GammaR * np.outer(ket_r0, bra_r0) \
+              - 1j * GammaR * np.outer(ket_0r, bra_0r) \
+                
+    return h_nonHerm
+
+def hamiltonian_including_spontaneous_emission (phi, hamiltonian_parameters):
+    """
+    Computes the effective Hamiltonian including the non Hermitian
+    part which represents the decay of the Rydberg states
+
+    Parameters
+    ----------
+    Computes the Hamiltonian matrix in the perfect
+    blockade regime, including the spontaneous emission
+    terms
+    
+    Parameters
+    ---------
+    phi:
+    Phase of the microwave
+
+    hamiltonian_parameters:
+    Dictionary containing the parameters of the Hamiltonian
+
+    Returns
+    -------
+    h_eff:
+    Effective Hamiltonian matrix
+    """
+
+    h_Herm = hamiltonian_PerfectBlockade(phi, hamiltonian_parameters)
+    GammaR = hamiltonian_parameters.get('GammaR')
+    h_nonHerm = hamiltonian_spontaneous_emission(GammaR)
+
+    h_eff = h_Herm + h_nonHerm
+
+    return h_eff
