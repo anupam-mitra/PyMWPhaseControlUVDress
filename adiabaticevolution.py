@@ -205,11 +205,11 @@ def adiabatic_evolution_propagators (adiabatic_parameters):
     t_gaussian_width = adiabatic_parameters['t_gaussian_width']
     DeltaMW = adiabatic_parameters['DeltaMW']
 
-    DeltaRa_min = adiabatic_parameters['DeltaR_min']
-    DeltaRa_max = adiabatic_parameters['DeltaR_max']
+    DeltaRa_min = adiabatic_parameters['DeltaRa_min']
+    DeltaRa_max = adiabatic_parameters['DeltaRa_max']
 
-    DeltaRb_min = adiabatic_parameters['DeltaR_min']
-    DeltaRb_max = adiabatic_parameters['DeltaR_max']
+    DeltaRb_min = adiabatic_parameters['DeltaRb_min']
+    DeltaRb_max = adiabatic_parameters['DeltaRb_max']
 
     OmegaR_min = adiabatic_parameters['OmegaR_min']
     OmegaR_max = adiabatic_parameters['OmegaR_max']
