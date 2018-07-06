@@ -24,6 +24,7 @@
 
 from __future__ import division
 
+import copy
 import itertools
 import numpy as np
 import costfunctions
@@ -91,30 +92,46 @@ def infidelity_unitary(phi, control_params):
     F_average = 0
     F_average_gradient = np.zeros(Nsteps)
 
+    Infidelities = np.zeros((Nlandmarks,))
     
     ##for deltaRa, deltaRb in itertools.product(deltaR_values, deltaR_values):
+    unitary_dressing_landmarkwise = []
+    unitary_undressing_landmarkwise = []
+    unitary_mwcontrol_landmarkwise = []
+    unitary_mwcontrol_gradient_landmarkwise = []
+    
     for l in range(Nlandmarks):
         hamiltonian_landmark_current = hamiltonian_landmarks_list[l]
 
         DeltaRa = hamiltonian_landmark_current.get('DeltaRa')
         DeltaRb = hamiltonian_landmark_current.get('DeltaRb')
     
-        control_params['PropagatorParameters']['HamiltonianParameters']['DeltaRa'] \
+    
+        u_params_current = copy.deepcopy(u_params)
+        
+        u_params_current['HamiltonianParameters']['DeltaRa'] \
         = DeltaRa 
-        control_params['PropagatorParameters']['HamiltonianParameters']['DeltaRb'] \
+        u_params_current['HamiltonianParameters']['DeltaRb'] \
         = DeltaRb
       
-        u, u_gradient  = propagators.propagator(phi, u_params)
+        u, u_gradient  = propagators.propagator(phi, u_params_current)
         udagger = u.transpose().conjugate()
     
         u_dress = u_dress_dict.get((DeltaRa, DeltaRb))
         u_undress = u_dress_dict.get((DeltaRa, DeltaRb))
+        
+        unitary_dressing_landmarkwise.append(u_dress)
+        unitary_undressing_landmarkwise.append(u_undress)
+        unitary_mwcontrol_landmarkwise.append(u)
+        unitary_mwcontrol_gradient_landmarkwise.append(u_gradient)
     
-        u_protocol = np.dot(u_dress, np.dot(u, u_undress))
+        u_protocol = np.dot(u_undress, np.dot(u, u_dress))
         u_protocol_dagger = np.conjugate(np.transpose(u_protocol))
         
         F = np.abs(np.trace(np.dot(u_protocol, u_target_dagger)))**2 / Nstates**2
         F_average += F 
+        
+        Infidelities[l] = 1-F
         
         for n in range(Nsteps):
             u_protocol_gradient_step = np.dot(u_undress, np.dot(u_gradient[n], u_dress))
@@ -130,6 +147,28 @@ def infidelity_unitary(phi, control_params):
     F_average_gradient /= Nterms_average        
     I_average_gradient = - F_average_gradient
 
+    Niterations_sofar = control_params.get('NInfidelityEvaluations')
+    if Niterations_sofar == None:
+        control_params['NInfidelityEvaluations'] = 1
+    else:
+        control_params['NInfidelityEvaluations'] = control_params['NInfidelityEvaluations'] + 1
+        
+    debug_flag = control_params.get('Debugging')
+    if debug_flag != None and debug_flag == True:
+        function_evaluation_information = {\
+           'Phi': phi, \
+            'Infidelties': Infidelities, \
+            'InfidelityAverage' : I_average, \
+            'InfidelityAverageGradient': I_average_gradient, \
+            'UnitariesDressingLandmarkwise': unitary_dressing_landmarkwise, \
+            'UnitariesUnDressingLandmarkwise': unitary_undressing_landmarkwise, \
+            'UnitariesMWControlLandmarkwise': unitary_mwcontrol_landmarkwise, \
+            'UnitariesMWControlGradientLandmarkwise': unitary_mwcontrol_gradient_landmarkwise, \
+        }
+
+        control_params['InfidelityEvaluationInformation'].append(function_evaluation_information)
+
+    print(Niterations_sofar, Infidelities, I_average)
 
     return I_average, I_average_gradient
 
