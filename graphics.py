@@ -25,11 +25,10 @@
 from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn
 
 from numpy import pi
 
-def plot_pwc_controlwaveform(phi, Nsteps, Tstep, fig=None, ax=None, titlestring=None, outfilename=None):
+def plot_pwc_controlwaveform(phi, Nsteps, Tstep, tstart, fig=None, ax=None, titlestring=None, outfilename=None):
     """
     Plots a piecewise constant control waveform returned
     by GRAPE
@@ -44,6 +43,9 @@ def plot_pwc_controlwaveform(phi, Nsteps, Tstep, fig=None, ax=None, titlestring=
     
     Tstep:
     time interval of each step
+    
+    tstart:
+    time instant at which to start
     """
     if fig == None and ax == None:
         #fig = plt.figure()
@@ -51,9 +53,9 @@ def plot_pwc_controlwaveform(phi, Nsteps, Tstep, fig=None, ax=None, titlestring=
         fig, axes = plt.subplots(1, 1)
         ax=axes
 
-    ax.step(np.arange(Nsteps+1)*Tstep, \
+    ax.step(tstart + np.arange(Nsteps+1)*Tstep, \
             np.concatenate([phi, [phi[-1]]])/pi, \
-            where='post', lw=0.25)
+            where='post', lw=1.0)
     
     '''
     # Decorations: phi is between 0 and 2*pi
