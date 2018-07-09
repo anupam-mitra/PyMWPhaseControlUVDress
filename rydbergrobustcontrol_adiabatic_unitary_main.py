@@ -44,23 +44,24 @@ import grape
 import rydbergatoms
 import robustadiabaticcostfunctions
 
-hamiltonian_parameters = {
-    'OmegaRa' : 2*pi*4, \
-    'OmegaRb' : 2*pi*4, \
-    'OmegaMWa' : 2*pi*4, \
-    'OmegaMWb' : 2*pi*4, \
-    'DeltaRa' : 2*pi*2, \
-    'DeltaRb' : 2*pi*2, \
-    'DeltaMWa' : -2*pi*1, \
-    'DeltaMWb' : -2*pi*1, \
-}
-
 hamiltonian_base_parameters = {
     'OmegaR' : 2*pi * 4, \
     'OmegaMW' : 2*pi * 4, \
     'DeltaR' : 2*pi * 2, \
     'DeltaMW' : 0, \
 }
+
+hamiltonian_parameters = {
+    'OmegaRa' : hamiltonian_base_parameters['OmegaR'], \
+    'OmegaRb' : hamiltonian_base_parameters['OmegaR'], \
+    'OmegaMWa' : hamiltonian_base_parameters['OmegaMW'], \
+    'OmegaMWb' : hamiltonian_base_parameters['OmegaMW'], \
+    'DeltaRa' : hamiltonian_base_parameters['DeltaR'], \
+    'DeltaRb' : hamiltonian_base_parameters['DeltaR'], \
+    'DeltaMWa' : hamiltonian_base_parameters['DeltaMW'], \
+    'DeltaMWb' : hamiltonian_base_parameters['DeltaMW'], \
+}
+
 
 hamiltonian_landmarks_list = [\
     {\
@@ -110,7 +111,8 @@ control_problem = {
     'PropagatorParameters': propagator_parameters, \
     'CostFunction' : robustadiabaticcostfunctions.infidelity_unitary, \
     'HamiltonianBaseParameters' : hamiltonian_base_parameters, \
-    'HamiltonianLandmarks': hamiltonian_landmarks_list,
+    'HamiltonianLandmarks': hamiltonian_landmarks_list, \
+    'InfidelityEvaluationInformation': [], \
 }
 
 adiabatic_parameters = {
