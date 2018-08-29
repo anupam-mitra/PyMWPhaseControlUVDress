@@ -116,10 +116,15 @@ def infidelity_unitary(phi, control_params):
       
         u, u_gradient  = propagators.propagator(phi, u_params_current)
         udagger = u.transpose().conjugate()
-    
-        u_dress = u_dress_dict.get((DeltaRa, DeltaRb))
-        u_undress = u_dress_dict.get((DeltaRa, DeltaRb))
-        
+
+        # Old implementation using a dictionary
+        #u_dress = u_dress_dict.get((DeltaRa, DeltaRb))
+        #u_undress = u_dress_dict.get((DeltaRa, DeltaRb))
+
+        # Read dressing and undressing unitaries
+        u_dress = control_params['UnitaryDressingLandmarks'][l]
+        u_undress = control_params['UnitaryUnDressingLandmarks'][l]
+             
         unitary_dressing_landmarkwise.append(u_dress)
         unitary_undressing_landmarkwise.append(u_undress)
         unitary_mwcontrol_landmarkwise.append(u)

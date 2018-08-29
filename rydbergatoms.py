@@ -50,6 +50,12 @@ bra_1r = ket_1r.conjugate().transpose()
 bra_r0 = ket_r0.conjugate().transpose()
 bra_r1 = ket_r1.conjugate().transpose()
 
+projector_logical = \
+    np.dot(ket_00, bra_00) + \
+    np.dot(ket_01, bra_01) + \
+    np.dot(ket_10, bra_10) + \
+    np.dot(ket_11, bra_11)
+
 
 def hamiltonian_TwoDress (h_params):
     """
