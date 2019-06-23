@@ -65,3 +65,26 @@ def check_hermitian(h):
     norm = np.linalg.norm(hdagger - h) / (2*Ndims)
     
     return norm
+
+dagger = lambda u : np.transpose(np.conjugate(u))
+
+def calc_hilbertschmidt_innerproduct (s, t):
+    """
+    Calculates the Hilbert Schmidt inner product
+    between two matrices 
+
+    Parameters
+    ----------
+    s, t: 
+    The matrices for which to compute the Hilbert
+    Schmidt inner product
+
+    Returns:
+    -------
+    hs:
+    The Hilbert Schmidt inner product of the two
+    matrices
+    """
+
+    hs = np.dot(s, dagger(t))
+    return hs

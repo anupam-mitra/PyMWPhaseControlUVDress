@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Mar 10 18:21:06 2019
+
+@author: anupam
+"""
+
+import numpy as np
+import scipy
+
+import adiabaticdressundress
+from numpy import sqrt, sign, pi, arctan2, sin
+
+"""
+An example that works with $\int \kappa \dd t = \pi$.
+This example requires t_gaussian_duration = 4*t_gaussian_width
+    Omega_max = 1
+    Omega_min = 0
+    Delta_max = 2.5
+    Delta_min = 0.1
+    t_gaussian_width = 12
+    t_constant_duration = 0.59185
+    t_mid = 0
+    
+Another example that works with $\int \kappa \dd t = \pi$.
+This example requires t_gaussian_duration = 2*t_gaussian_width
+    Omega_max = 1
+    Omega_min = 0
+    Delta_max = 2.5
+    Delta_min = 0.1
+    t_gaussian_width = 12
+    t_constant_duration = 4.56267
+    t_mid = 0
+    
+Another example that works with $\int \kappa \dd t = 5\pi$.
+This example requires t_gaussian_duration = 2*t_gaussian_width
+    Omega_max = 1
+    Omega_min = 0
+    Delta_max = 2.5
+    Delta_min = 0.1
+    t_gaussian_width = 12
+    t_constant_duration = 55.6219
+    t_mid = 0
+"""
+Omega_max = 1
+Omega_min = 0
+Delta_max = 2.5
+Delta_min = 0.1
+t_gaussian_width = 12
+t_constant_duration = 4.56267
+t_mid = 0
+    
+adiabatic = adiabaticdressundress.RydbergAdiabaticDressUndress(\
+                Omega_min, Omega_max, Delta_min, Delta_max, \
+                 t_gaussian_width, t_constant_duration, t_mid, 2)
+
+
+t_dress_begin = adiabatic.t_dress_begin
+t_dress_end = adiabatic.t_dress_end
+
+t_undress_begin = adiabatic.t_undress_begin
+t_undress_end = adiabatic.t_undress_end
+
+t = np.linspace(t_dress_begin, t_undress_end, num=512)
+
+Omega = np.empty(t.shape)
+dOmega_dt = np.empty(t.shape)
+Delta = np.empty(t.shape)
+dDelta_dt = np.empty(t.shape)
+
+kappa = np.empty(t.shape)
+
+theta_admix_1 = np.empty(t.shape)
+theta_admix_2 = np.empty(t.shape)
+
+
+for n in range(t.shape[0]):
+    Omega[n], dOmega_dt[n] = adiabatic.get_Omega(t=t[n])
+    Delta[n], dDelta_dt[n] = adiabatic.get_Delta(t[n])
+    
+    kappa[n] = -Delta[n]/2 - sign(Delta[n])/2 * (sqrt(Delta[n]**2 + 2*Omega[n]**2) \
+                                                 - 2*sqrt(Delta[n]**2 + Omega[n]**2)) 
+    
+    theta_admix_1[n] = arctan2(Omega[n], Delta[n])
+    theta_admix_2[n] = arctan2(sqrt(2) * Omega[n], Delta[n])
+
+    
+diabaticity = np.abs((Omega * dDelta_dt - Delta * dOmega_dt)/(Omega**2 + Delta**2)**(3/2))
+
+integrated_rydberg_population = \
+    2/3*scipy.integrate.cumtrapz(sin(theta_admix_1/2)**2, t) + \
+    1/3*scipy.integrate.cumtrapz(sin(theta_admix_2/2)**2, t)
+
+print('Max diabaticity = %g' % (np.max(diabaticity)))
+print('Integrated Rydberg population = %g' % \
+      (integrated_rydberg_population[-1],))
+
+
+import matplotlib, os
+matplotlib.rcParams['text.usetex'] = True
+matplotlib.rcParams['font.size'] = 32
+import matplotlib.pyplot as plt
+
+plt.rc('text', usetex=True)
+plt.rcParams["figure.figsize"] = [12, 12]
+
+fig, axes = plt.subplots(4, 1, sharex=True)
+axes[0].plot(t/2/pi, Omega, color='blue')
+axes[1].plot(t/2/pi, Delta, color='blue')
+axes[2].plot(t/2/pi, kappa, color='blue')
+axes[3].plot(t/2/pi, sin(theta_admix_1/2)**2, color='blue')
+axes[3].plot(t/2/pi, sin(theta_admix_2/2)**2, color='red')
+
+
+axes[0].set_ylabel(r'$\Omega_{\mathrm{uv}} / \Omega_{\max}$')
+axes[1].set_ylabel(r'$\Delta_{\mathrm{uv}} / \Omega_{\max}$')
+axes[2].set_ylabel(r'$\kappa / \Omega_{\max}$')
+axes[3].set_ylabel(r'$\mathcal{P}_r$')
+
+
+axes[-1].set_xlabel(r'$\Omega_{\max} t / (2\pi)$')
+
+title_string = r'$\frac{1}{\pi}\int\kappa(t)dt = %g$' % \
+                 (scipy.integrate.cumtrapz(kappa, t)[-1]/pi, )\
+                 
+
+axes[0].set_title(title_string)
+
+outputdir = '/home/anupam/QuantumControl/Py'
+date_string = '2019-06-12'
+outputfile = os.path.join(outputdir, date_string + '_AdiabaticLongRamp.svg')
+#plt.savefig(outputfile, filetype='svg')
+
+plt.rc('text', usetex=True)
+plt.rcParams["figure.figsize"] = [4, 4]
+
+fig, axes = plt.subplots(2, 1, sharex=True)
+axes[0].plot(t/2/pi, Omega, color='blue')
+axes[0].plot(t/2/pi, Delta, color='red')
+axes[0].plot(t/2/pi, kappa, color='green')
+
+axes[1].plot(t/2/pi, sin(theta_admix_1/2)**2, color='blue')
+axes[1].plot(t/2/pi, sin(theta_admix_2/2)**2, color='red')
+axes[1].axhline(0.5, color='k', ls='dotted')
+
+#fig, axes = plt.subplots(6, 1, sharex=True)
+#axes[0].plot(t, Omega)
+#axes[1].plot(t, dOmega_dt)
+#axes[2].plot(t, Delta)
+#axes[3].plot(t, dDelta_dt)
+#axes[4].plot(t, diabaticity)
+#axes[5].plot(t, kappa)
+#
+#axes[0].set_ylabel(r'$\frac{\Omega}{2\pi MHz}$')
+#axes[1].set_ylabel(r'$\dot{\Omega}/ \frac{2\pi MHz}{\mu s}$')
+#axes[2].set_ylabel(r'$\frac{\Delta}{2\pi MHz}$')
+#axes[3].set_ylabel(r'$\dot{\Delta}/ \frac{2\pi MHz}{\mu s}$')
+#axes[4].set_ylabel('Diabaticity\n')
+#axes[5].set_ylabel(r'$\frac{\kappa}{2\pi MHz}$')
+#axes[5].set_xlabel(r'$\frac{t}{\mu s}$')
+#
+#title_string = r'Max diabaticity = %g; $\frac{1}{\pi}\int\kappa(t)dt = %g$'\
+#                 %(np.max(diabaticity), scipy.integrate.cumtrapz(kappa, t)[-1]/pi)
+#
+#axes[0].set_title(title_string)
+
+#outputdir = '/home/anupam/2017-08-14_2017-Fall/Notebooks/rydbergatoms/QuantumControl/Py'
+#outputfile = os.path.join(outputdir, '2018-06-17_AdiabaticRamp.pdf')
+#plt.savefig(outputfile, filetype='pdf')

@@ -2,25 +2,25 @@
 # -*- coding: utf-8 -*-
 #
 #  rydbergatoms.py
-#  
+#
 #  Copyright 2017 Anupam Mitra <anupam@unm.edu>
-#  
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
 #  (at your option) any later version.
-#  
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#  
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
-#  
-#  
+#
+#
 
 from __future__ import division
 
@@ -59,14 +59,14 @@ projector_logical = \
 
 def hamiltonian_TwoDress (h_params):
     """
-    Computes the Hamiltonian matrix for the states that 
+    Computes the Hamiltonian matrix for the states that
     participate in the two atom dressing.
-    
-    Paramters
+
+    Parameters
     ---------
     h_params:
     Dictionary containing the parameters of the Hamiltonian
-    
+
     Returns
     -------
     H_TwoDress:
@@ -80,7 +80,7 @@ def hamiltonian_TwoDress (h_params):
     DeltaMWb = h_params['DeltaMWb']
     OmegaMWa = h_params['OmegaMWa']
     OmegaMWb = h_params['OmegaMWb']
-    
+
     H_TwoDress = -(DeltaRa + DeltaMWa + DeltaMWb) * ket_r1 * bra_r1 \
         -(DeltaRb + DeltaMWa + DeltaMWb) * ket_1r * bra_1r \
         -(DeltaMWa + DeltaMWb) * ket_11 * bra_11 \
@@ -91,14 +91,14 @@ def hamiltonian_TwoDress (h_params):
 
 def hamiltonian_OneDress (h_params):
     """
-    Computes the Hamiltonian matrix for the states that 
+    Computes the Hamiltonian matrix for the states that
     participate in the one atom dressing.
-    
+
     Parameters
     ---------
     h_params:
     Dictionary containing the parameters of the Hamiltonian
-    
+
     Returns
     -------
     H_OneDress:
@@ -119,21 +119,21 @@ def hamiltonian_OneDress (h_params):
         - DeltaMWb * ket_01 * bra_01 \
         + OmegaRa / 2 * (ket_r0 * bra_10 + ket_10 * bra_r0) \
         + OmegaRb / 2 * (ket_0r * bra_01 + ket_01 * bra_0r)
-        
+
     return H_OneDress
-        
+
 def hamiltonian_MW (phi, h_params):
     """
     Computes the Hamiltonian matrix for the microwave control
-    
+
     Parameters
     ---------
     phi:
     Phase of the microwave
-    
+
     h_params:
     Dictionary containing the parameters of the Hamiltonian
-    
+
     Returns
     -------
     H_MW:
@@ -147,7 +147,7 @@ def hamiltonian_MW (phi, h_params):
     DeltaMWb = h_params['DeltaMWb']
     OmegaMWa = h_params['OmegaMWa']
     OmegaMWb = h_params['OmegaMWb']
-    
+
     H_MW = OmegaMWa / 2 * (exp(1j*phi) * ket_0r * bra_1r + exp(-1j*phi) * ket_1r * bra_0r) \
           + OmegaMWb / 2 * (exp(1j*phi) * ket_r0 * bra_r1 + exp(-1j*phi) * ket_r1 * bra_r0) \
           + OmegaMWa / 2 * (exp(1j*phi) * ket_01 * bra_11 + exp(-1j*phi) * ket_11 * bra_01) \
@@ -156,12 +156,11 @@ def hamiltonian_MW (phi, h_params):
           + OmegaMWb / 2 * (exp(1j*phi) * ket_00 * bra_01 + exp(-1j*phi) * ket_01 * bra_00)
 
     return H_MW
-        
-def hamiltonian_PerfectBlockade (phi, hparams):
+
+def hamiltonian_MW_grad_Omega (phi, h_params):
     """
-    Computes the Hamiltonian matrix in the perfect
-    blockade regime
-    
+    Computes the Hamiltonian matrix for the microwave control
+
     Parameters
     ---------
     phi:
@@ -169,7 +168,52 @@ def hamiltonian_PerfectBlockade (phi, hparams):
 
     h_params:
     Dictionary containing the parameters of the Hamiltonian
-    
+
+    Returns
+    -------
+    H_MW:
+    The hamiltonian matrix
+    """
+    DeltaRa = h_params['DeltaRa']
+    DeltaRb = h_params['DeltaRb']
+    OmegaRa = h_params['OmegaRa']
+    OmegaRb = h_params['OmegaRb']
+    DeltaMWa = h_params['DeltaMWa']
+    DeltaMWb = h_params['DeltaMWb']
+    OmegaMWa = h_params['OmegaMWa']
+    OmegaMWb = h_params['OmegaMWb']
+
+    dHmw_dOmega \
+          = 1 / 2 * (exp(1j*phi) * ket_0r * bra_1r + exp(-1j*phi) * ket_1r * bra_0r) \
+          + 1 / 2 * (exp(1j*phi) * ket_r0 * bra_r1 + exp(-1j*phi) * ket_r1 * bra_r0) \
+          + 1 / 2 * (exp(1j*phi) * ket_01 * bra_11 + exp(-1j*phi) * ket_11 * bra_01) \
+          + 1 / 2 * (exp(1j*phi) * ket_10 * bra_11 + exp(-1j*phi) * ket_11 * bra_10) \
+          + 1 / 2 * (exp(1j*phi) * ket_00 * bra_10 + exp(-1j*phi) * ket_10 * bra_00) \
+          + 1 / 2 * (exp(1j*phi) * ket_00 * bra_01 + exp(-1j*phi) * ket_01 * bra_00)
+
+    H_MW = OmegaMWa / 2 * (exp(1j*phi) * ket_0r * bra_1r + exp(-1j*phi) * ket_1r * bra_0r) \
+          + OmegaMWb / 2 * (exp(1j*phi) * ket_r0 * bra_r1 + exp(-1j*phi) * ket_r1 * bra_r0) \
+          + OmegaMWa / 2 * (exp(1j*phi) * ket_01 * bra_11 + exp(-1j*phi) * ket_11 * bra_01) \
+          + OmegaMWb / 2 * (exp(1j*phi) * ket_10 * bra_11 + exp(-1j*phi) * ket_11 * bra_10) \
+          + OmegaMWa / 2 * (exp(1j*phi) * ket_00 * bra_10 + exp(-1j*phi) * ket_10 * bra_00) \
+          + OmegaMWb / 2 * (exp(1j*phi) * ket_00 * bra_01 + exp(-1j*phi) * ket_01 * bra_00)
+
+    return dHmw_dOmega
+
+
+def hamiltonian_PerfectBlockade (phi, hparams):
+    """
+    Computes the Hamiltonian matrix in the perfect
+    blockade regime
+
+    Parameters
+    ---------
+    phi:
+    Phase of the microwave
+
+    h_params:
+    Dictionary containing the parameters of the Hamiltonian
+
     Returns
     -------
     H_PerfBlock:
@@ -179,14 +223,14 @@ def hamiltonian_PerfectBlockade (phi, hparams):
     H_OneDress = hamiltonian_OneDress(hparams)
     H_MW = hamiltonian_MW(phi, hparams)
     H_PerfBlock = H_TwoDress + H_OneDress + H_MW
-    
+
     return H_PerfBlock
 
 def hamiltonian_grad_PerfectBlockade (phi, h_params):
     """
     Computes the derivative Hamiltonian matrix with respect
     to the phase of the microwave
-    
+
     Parameters
     ---------
     phi:
@@ -194,7 +238,7 @@ def hamiltonian_grad_PerfectBlockade (phi, h_params):
 
     h_params:
     Dictionary containing the parameters of the Hamiltonian
-    
+
     Returns
     -------
     dH_dphi:
@@ -209,7 +253,7 @@ def hamiltonian_grad_PerfectBlockade (phi, h_params):
     OmegaMWa = h_params['OmegaMWa']
     OmegaMWb = h_params['OmegaMWb']
 
-    
+
     dH_dphi = 1j * OmegaMWa / 2 * (exp(1j*phi) * ket_0r * bra_1r - exp(-1j*phi) * ket_1r * bra_0r) \
           + 1j * OmegaMWb / 2 * (exp(1j*phi) * ket_r0 * bra_r1 - exp(-1j*phi) * ket_r1 * bra_r0) \
           + 1j * OmegaMWa / 2 * (exp(1j*phi) * ket_01 * bra_11 - exp(-1j*phi) * ket_11 * bra_01) \
@@ -223,21 +267,21 @@ def hamiltonian_spontaneous_emission (GammaR):
     """
     Computes the non Hermitian Hamiltonian matrix which represents
     the decay of the Rydberg states.
-    
+
     Paramters
     ---------
     GammaR: spontaneous emission rate of the Rydberg state
-    
+
     Returns
     -------
     h_nonHerm: Non Hermitian Hamiltonian
     """
-    
+
     h_nonHerm = - 1j * GammaR * np.outer(ket_r1, bra_r1) \
               - 1j * GammaR * np.outer(ket_1r, bra_1r) \
               - 1j * GammaR * np.outer(ket_r0, bra_r0) \
               - 1j * GammaR * np.outer(ket_0r, bra_0r) \
-                
+
     return h_nonHerm
 
 def hamiltonian_including_spontaneous_emission (phi, hamiltonian_parameters):
@@ -250,7 +294,7 @@ def hamiltonian_including_spontaneous_emission (phi, hamiltonian_parameters):
     Computes the Hamiltonian matrix in the perfect
     blockade regime, including the spontaneous emission
     terms
-    
+
     Parameters
     ---------
     phi:
