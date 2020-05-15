@@ -160,13 +160,10 @@ def propagator (phi, propagator_params):
     Tcontrol = propagator_params['Tcontrol']
 
     hamiltonian_func = propagator_params['HamiltonianMatrix']
-    hamiltonian_grad_func = propagator_params['HamiltonianMatrixGradient']
-
     h_params = propagator_params['HamiltonianParameters']
 
     h_steps = [hamiltonian_func(phi[n], h_params) for n in range(Nsteps)]
     u_steps = [expm(-1j*Tstep*h) for h in h_steps]
-    h_grad_steps = [hamiltonian_grad_func(phi[n], h_params) for n in range(Nsteps)]
 
     dimensions = h_steps[0].shape[0]
     u = np.identity(dimensions, dtype=complex)
@@ -174,19 +171,10 @@ def propagator (phi, propagator_params):
     for n in range(Nsteps):
         u = np.dot(u_steps[n], u)
 
-        u_gradient = []
+    return u
 
-    for n in range(Nsteps):
-        u_gradient.append(np.identity(dimensions, dtype=complex))
-
-        for m in range(n):
-            u_gradient[n] = np.dot(u_steps[m], u_gradient[n])
-
-        u_step_derivative = propagator_step_derivative(\
-                                        h_steps[n], h_grad_steps[n], Tstep)
-        u_gradient[n] = np.dot(u_step_derivative, u_gradient[n])
-
-        for m in range(n+1, Nsteps):
-            u_gradient[n] = np.dot(u_steps[m], u_gradient[n])
-
-    return u, u_gradient
+def propagator_with_gradient (phi, propagator_params):
+    """
+    Computes the propagator and its gradient at given control variables.
+    """
+    return propagator(phi, propagator_params), propagator_gradient(phi, propagator_params)

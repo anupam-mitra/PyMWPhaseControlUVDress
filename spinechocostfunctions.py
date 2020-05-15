@@ -204,7 +204,7 @@ def infidelity (phi, control_params):
 
     u_target_dagger = u_target.conjugate().transpose()
 
-    u, u_gradient = propagators.propagator(phi, u_params)
+    u, u_gradient = propagators.propagator_with_gradient(phi, u_params)
 
     u_protocol = np.dot(u_mw_x_halfpi, \
                     np.dot(u_undress, \

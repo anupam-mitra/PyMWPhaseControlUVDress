@@ -28,6 +28,17 @@ import itertools
 import numpy as np
 import costfunctions
 
+def _delta_r_pairs(control_params):
+    h_inhomo = control_params['HamiltonianUncertainParameters']
+    deltaR_values = h_inhomo['deltaDeltaRValues']
+    return itertools.product(deltaR_values, deltaR_values), len(deltaR_values)**2
+
+def _set_delta_r(control_params, deltaRa, deltaRb):
+    DeltaR = control_params['HamiltonianBaseParameters']['DeltaR']
+    h_params = control_params['PropagatorParameters']['HamiltonianParameters']
+    h_params['DeltaRa'] = DeltaR + deltaRa
+    h_params['DeltaRb'] = DeltaR + deltaRb
+
 def infidelity (phi, control_params):
     """
     Computes the infidelity for a control task 
@@ -53,24 +64,11 @@ def infidelity (phi, control_params):
     variables, averaged over all inhomogeneities
     """
  
-    h_inhomo = control_params['HamiltonianUncertainParameters']
-    
-    #deltaOmega_values = h_inhomo['deltaOmegaValues']
-    deltaR_values = h_inhomo['deltaDeltaRValues']
-    
     I_mean = 0
-    #Nterms_average = len(deltaOmega_values) * len(deltaR_values)
-    Nterms_average = len(deltaR_values)**2
-    
-    DeltaR = control_params['HamiltonianBaseParameters']['DeltaR']
-    
-    for deltaRa, deltaRb in itertools.product(deltaR_values, deltaR_values):
-        
-        control_params['PropagatorParameters']['HamiltonianParameters']['DeltaRa'] \
-        = DeltaR + deltaRa
-        control_params['PropagatorParameters']['HamiltonianParameters']['DeltaRb'] \
-        = DeltaR + deltaRb
-        
+    delta_r_pairs, Nterms_average = _delta_r_pairs(control_params)
+
+    for deltaRa, deltaRb in delta_r_pairs:
+        _set_delta_r(control_params, deltaRa, deltaRb)
         I_mean += costfunctions.infidelity(phi, control_params)
     
     I_mean /= Nterms_average
@@ -105,28 +103,13 @@ def infidelity_gradient (phi, control_params):
    
     """
 
-    h_inhomo = control_params['HamiltonianUncertainParameters']
-    
-    #deltaOmega_values = h_inhomo['deltaOmegaValues']
-    deltaR_values = h_inhomo['deltaDeltaRValues']
-    
-    #Nterms_average = len(deltaOmega_values) * len(deltaR_values)
-    Nterms_average = len(deltaR_values)**2
     Nsteps = control_params['PropagatorParameters']['Nsteps']
-    
-    DeltaR = control_params['HamiltonianBaseParameters']['DeltaR']
-    
     I_gradient_mean = np.zeros(Nsteps)
-    
-    
-    for deltaRa, deltaRb in itertools.product(deltaR_values, deltaR_values):
-        
-        control_params['PropagatorParameters']['HamiltonianParameters']['DeltaRa'] \
-        = DeltaR + deltaRa
-        control_params['PropagatorParameters']['HamiltonianParameters']['DeltaRb'] \
-        = DeltaR + deltaRb
-        
-        I_gradient_mean = costfunctions.infidelity_gradient(phi, control_params)
+    delta_r_pairs, Nterms_average = _delta_r_pairs(control_params)
+
+    for deltaRa, deltaRb in delta_r_pairs:
+        _set_delta_r(control_params, deltaRa, deltaRb)
+        I_gradient_mean += costfunctions.infidelity_gradient(phi, control_params)
         
     I_gradient_mean /= Nterms_average
     
@@ -157,24 +140,11 @@ def infidelity_unitary(phi, control_params):
     variables, averaged over all inhomogeneities
     """
 
-    h_inhomo = control_params['HamiltonianUncertainParameters']
-    
-    #deltaOmega_values = h_inhomo['deltaOmegaValues']
-    deltaR_values = h_inhomo['deltaDeltaRValues']
-    
     I_mean = 0
-    #Nterms_average = len(deltaOmega_values) * len(deltaR_values)
-    Nterms_average = len(deltaR_values)**2
-    
-    DeltaR = control_params['HamiltonianBaseParameters']['DeltaR']
-    
-    for deltaRa, deltaRb in itertools.product(deltaR_values, deltaR_values):
-        
-        control_params['PropagatorParameters']['HamiltonianParameters']['DeltaRa'] \
-        = DeltaR + deltaRa
-        control_params['PropagatorParameters']['HamiltonianParameters']['DeltaRb'] \
-        = DeltaR + deltaRb
-        
+    delta_r_pairs, Nterms_average = _delta_r_pairs(control_params)
+
+    for deltaRa, deltaRb in delta_r_pairs:
+        _set_delta_r(control_params, deltaRa, deltaRb)
         I_mean += costfunctions.infidelity_unitary(phi, control_params)
     
     I_mean /= Nterms_average
@@ -208,28 +178,13 @@ def infidelity_unitary_gradient (phi, control_params):
    
     """
 
-    h_inhomo = control_params['HamiltonianUncertainParameters']
-    
-    #deltaOmega_values = h_inhomo['deltaOmegaValues']
-    deltaR_values = h_inhomo['deltaDeltaRValues']
-    
-    #Nterms_average = len(deltaOmega_values) * len(deltaR_values)
-    Nterms_average = len(deltaR_values)**2
     Nsteps = control_params['PropagatorParameters']['Nsteps']
-    
-    DeltaR = control_params['HamiltonianBaseParameters']['DeltaR']
-    
     I_gradient_mean = np.zeros(Nsteps)
-    
-    
-    for deltaRa, deltaRb in itertools.product(deltaR_values, deltaR_values):
-        
-        control_params['PropagatorParameters']['HamiltonianParameters']['DeltaRa'] \
-        = DeltaR + deltaRa
-        control_params['PropagatorParameters']['HamiltonianParameters']['DeltaRb'] \
-        = DeltaR + deltaRb
-        
-        I_gradient_mean = costfunctions.infidelity_unitary_gradient(phi, control_params)
+    delta_r_pairs, Nterms_average = _delta_r_pairs(control_params)
+
+    for deltaRa, deltaRb in delta_r_pairs:
+        _set_delta_r(control_params, deltaRa, deltaRb)
+        I_gradient_mean += costfunctions.infidelity_unitary_gradient(phi, control_params)
         
     I_gradient_mean /= Nterms_average
     

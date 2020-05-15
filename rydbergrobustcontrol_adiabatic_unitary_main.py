@@ -141,6 +141,8 @@ print("%s: Calculating adiabatic dressing and undressing unitaries" %  time_stri
     
 u_dress_dict = {}
 u_undress_dict = {}
+u_dress_landmarks = []
+u_undress_landmarks = []
 
 Nlandmarks = len(hamiltonian_landmarks_list)
 DeltaR = hamiltonian_base_parameters['DeltaR']
@@ -166,15 +168,19 @@ for l in range(Nlandmarks):
         = adiabatic_parameters['DeltaR_max'] + (DeltaRb - DeltaR)
     
     u_dress, u_undress = \
-        adiabaticevolution.adiabatic_evolution_propagators(adiabatic_parameters)
+        adiabaticevolution.adiabatic_evolution_propagators(adiabatic_parameters_current)
 
     u_dress_dict[(DeltaRa, DeltaRb)] = u_dress
     u_undress_dict[(DeltaRa, DeltaRb)] = u_undress
+    u_dress_landmarks.append(u_dress)
+    u_undress_landmarks.append(u_undress)
 
 # Adding the adiabatic dressing and undressing unitaries to the 
 # control_problem dictionary
 control_problem['UnitaryDressing'] =  u_dress_dict
 control_problem['UnitaryUndressing'] = u_undress_dict
+control_problem['UnitaryDressingLandmarks'] = u_dress_landmarks
+control_problem['UnitaryUnDressingLandmarks'] = u_undress_landmarks
 
 # Executing GRAPE for quantum optimal control using microwave phase
 time_stamp = time.time()
@@ -189,14 +195,14 @@ time_stamp = time.time()
 time_string = datetime.datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M:%S')
 print("%s: Saving simulation data" %  time_string)
 
-if not os.path.isdir(outputdir):
-    os.mkdir(outputdir)
+if not os.path.isdir(OUTPUT_DIR):
+    os.mkdir(OUTPUT_DIR)
 
 time_stamp = time.time()
 time_string = datetime.datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d--%H-%M-%S')
 
 filename = time_string + '--' + str(uuid.uuid4()) + '.pkl'
-outputfile = open(os.path.join(outputdir, filename), 'wb')
+outputfile = open(os.path.join(OUTPUT_DIR, filename), 'wb')
 
 simulation_data = {\
     'time_string': time_string, \

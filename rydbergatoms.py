@@ -25,7 +25,7 @@
 from __future__ import division
 
 import numpy as np
-from numpy import exp
+from numpy import exp, sqrt, arctan2, cos, sin, sign, pi
 
 
 """
@@ -316,3 +316,50 @@ def hamiltonian_including_spontaneous_emission (phi, hamiltonian_parameters):
     h_eff = h_Herm + h_nonHerm
 
     return h_eff
+
+def target_dressed_state (hamiltonian_parameters):
+    """
+    Finds the target dressed state for the Rydberg control examples.
+    """
+    DeltaRa = hamiltonian_parameters['DeltaRa']
+    DeltaRb = hamiltonian_parameters['DeltaRb']
+    OmegaRa = hamiltonian_parameters['OmegaRa']
+    OmegaRb = hamiltonian_parameters['OmegaRb']
+
+    thetaMixa = arctan2(OmegaRa, -DeltaRa)
+    thetaMixb = arctan2(OmegaRb, -DeltaRb)
+
+    return 1/sqrt(2) * \
+           ( cos(thetaMixa/2) * ket_r0 \
+           + sin(thetaMixa/2) * ket_10 \
+           + cos(thetaMixb/2) * ket_0r \
+           + sin(thetaMixb/2) * ket_01 )
+
+def dressing_unitary (hamiltonian_parameters):
+    """
+    Calculates the unitary map implemented during adiabatic Rydberg dressing.
+    """
+    DeltaRa = hamiltonian_parameters['DeltaRa']
+    DeltaRb = hamiltonian_parameters['DeltaRb']
+    OmegaRa = hamiltonian_parameters['OmegaRa']
+    OmegaRb = hamiltonian_parameters['OmegaRb']
+
+    DeltaR = (DeltaRa + DeltaRb)/2
+    OmegaR = (OmegaRa + OmegaRb)/2
+
+    ELS1 = -DeltaR/2 + sign(DeltaR) * sqrt(DeltaR**2 + OmegaR**2)
+    ELS2 = -DeltaR/2 + sign(DeltaR) * sqrt(DeltaR**2 + 2*OmegaR**2)
+
+    Tdress = pi/(ELS2 - ELS1)/2
+
+    return ket_00 * bra_00 \
+         + exp(-1j * ELS1 * Tdress) * ket_01 * bra_01 \
+         + exp(-1j * ELS1 * Tdress) * ket_10 * bra_10 \
+         + exp(-1j * ELS2 * Tdress) * ket_11 * bra_11 \
+         + exp(+1j * ELS1 * Tdress) * ket_0r * bra_0r \
+         + exp(+1j * ELS1 * Tdress) * ket_r0 * bra_r0 \
+         + exp(+1j * ELS2 * Tdress) \
+         * (ket_r1 + ket_1r)/sqrt(2) \
+         * (bra_r1 + bra_1r)/sqrt(2) \
+         + (ket_r1 - ket_1r)/sqrt(2) \
+         * (bra_r1 - bra_1r)/sqrt(2)

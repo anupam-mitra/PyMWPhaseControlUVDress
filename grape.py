@@ -62,8 +62,13 @@ def grape (control_problem, debug=False, gtol=1e-5, maxiter=None):
     elif initialization == 'Sine':
         phi_initial = pi/2 * (1 + np.sin(2*pi*np.linspace(0, 2, Nsteps)))
 
+    if cost_function_grad is None:
+        jac = True
+    else:
+        jac = cost_function_grad
+
     result = scipy.optimize.minimize(\
-                 fun=cost_function, x0=phi_initial, jac=True, method='BFGS', \
+                 fun=cost_function, x0=phi_initial, jac=jac, method='BFGS', \
                  options={'gtol': gtol, 'maxiter': maxiter,}, \
                  args=(control_problem,))
 

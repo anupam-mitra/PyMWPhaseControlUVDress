@@ -71,7 +71,6 @@ u_target = rydbergatoms.ket_00 * rydbergatoms.bra_00 \
 
 control_problem = {
     'ControlTask' : 'UnitaryMap', \
-    'Initialization' : 'Random', \
     'Initialization' : 'Constant', \
     'UnitaryTarget': u_target, \
     'PropagatorParameters': propagator_parameters, \

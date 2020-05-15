@@ -118,7 +118,7 @@ def infidelity_unitary(phi, control_params):
         u_params_current['HamiltonianParameters']['DeltaRb'] \
         = DeltaRb
 
-        u, u_gradient  = propagators.propagator(phi, u_params_current)
+        u, u_gradient = propagators.propagator_with_gradient(phi, u_params_current)
         udagger = u.transpose().conjugate()
 
         # Old implementation using a dictionary

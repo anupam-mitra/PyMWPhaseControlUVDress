@@ -24,43 +24,11 @@
 
 from __future__ import division
 
-import numpy as np
 import rydbergatoms
 import grape
 import robustcostfunctions
 
-from numpy import sqrt, pi, arctan2, cos, sin
-
-def calc_targetdressedstate (hamiltonian_parameters):
-    """
-    Finds the target dressed state
-    
-    Parameters
-    ----------
-    hamiltonian_parameters:
-    Dictionary containing the parameters of the Hamiltonian
-
-    Returns
-    -------
-    psi_target:
-    Target state
-    """
-    
-    DeltaRa = hamiltonian_parameters['DeltaRa']
-    DeltaRb = hamiltonian_parameters['DeltaRb']
-    OmegaRa = hamiltonian_parameters['DeltaRa']
-    OmegaRb = hamiltonian_parameters['DeltaRb']
-    
-    thetaMixa = arctan2(OmegaRa, -DeltaRa)
-    thetaMixb = arctan2(OmegaRb, -DeltaRb)
-    
-    psi_target = 1/sqrt(2)* \
-               ( cos(thetaMixa/2) * rydbergatoms.ket_r0 \
-               + sin(thetaMixa/2) * rydbergatoms.ket_10 \
-               + cos(thetaMixb/2) * rydbergatoms.ket_0r \
-               + sin(thetaMixb/2) * rydbergatoms.ket_01 )
-
-    return psi_target
+from numpy import pi
 
 hamiltonian_parameters = {
     'OmegaRa' : 1, \
@@ -100,7 +68,7 @@ control_problem = {
     'Initialization' : 'Constant', \
     'PropagatorParameters': propagator_parameters, \
     'PureStateInitial': rydbergatoms.ket_00, \
-    'PureStateTarget': calc_targetdressedstate(hamiltonian_parameters), \
+    'PureStateTarget': rydbergatoms.target_dressed_state(hamiltonian_parameters), \
     #'PureStateTarget': (rydbergatoms.ket_01 + rydbergatoms.ket_10)/sqrt(2), \
     'CostFunction' : robustcostfunctions.infidelity, \
     'CostFunctionGrad' : robustcostfunctions.infidelity_gradient, \
