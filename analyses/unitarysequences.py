@@ -38,7 +38,6 @@ Global TODO
 """
 
 import math
-import sys
 import numpy as np
 import scipy
 import scipy.optimize
@@ -47,11 +46,8 @@ import scipy.stats
 from scipy.linalg import expm
 from numpy import sin, cos, exp, sqrt, pi, sign
 
-sys.path.append('../bench/models')
-
-dagger = lambda u: np.transpose(np.conjugate(u))
-
-import angularmomentum
+import fidelity
+import spinoperators
 
 ################################################################################
 class RydbergAdiabaticPhasesTwoQubits:
@@ -135,25 +131,14 @@ class TwoQubitSpin:
     """
 
     def __init__ (self):
-        self.sigmax, self.sigmay, self.sigmaz = \
-            (2*s for s in angularmomentum.angularmomentumop(1/2))
-
-        self.identity2 = np.eye(2)
-
-        self.sx = (np.kron(self.identity2, self.sigmax)
-              + np.kron(self.sigmax, self.identity2)) * 1/2
-
-        self.sy = (np.kron(self.identity2, self.sigmay)
-              + np.kron(self.sigmay, self.identity2)) * 1/2
-
-        self.sz = (np.kron(self.identity2, self.sigmaz)
-              + np.kron(self.sigmaz, self.identity2)) * 1/2
-
-        self.sxsquared = np.dot(self.sx, self.sx)
-        self.sysquared = np.dot(self.sy, self.sy)
-        self.szsquared = np.dot(self.sz, self.sz)
-
-        self.identity = np.kron(self.identity2, self.identity2)
+        spin = spinoperators.TwoQubitSpin()
+        self.sx = spin.sx
+        self.sy = spin.sy
+        self.sz = spin.sz
+        self.sxsquared = spin.sxsquared
+        self.sysquared = spin.sysquared
+        self.szsquared = spin.szsquared
+        self.identity = spin.identity
 
     def get_ndim (self):
         # TODO
@@ -401,7 +386,7 @@ class TwoQubitUnitaryQuantumControl:
                 np.linalg.matrix_rank(unitary), \
                 np.linalg.matrix_rank(self.target)])
 
-        goal_value = np.trace(np.dot(unitary, dagger(self.target))) \
+        goal_value = np.trace(np.dot(unitary, fidelity.dagger(self.target))) \
                     / denominator
     
         infidelity_value = 1 - np.abs(goal_value)**2
@@ -411,10 +396,10 @@ class TwoQubitUnitaryQuantumControl:
 
         for s in range(self.nsteps):
             dgoal_dtheta[s] = (np.trace(np.dot(dunitary_dtheta[:, :, s],\
-                dagger(self.target)))) / denominator
+                fidelity.dagger(self.target)))) / denominator
 
             dgoal_dphi[s] = (np.trace(np.dot(dunitary_dphi[:, :, s],\
-                dagger(self.target)))) / denominator
+                fidelity.dagger(self.target)))) / denominator
 
         dinfidelity_values = np.empty((self.nangles, self.nsteps))
         dinfidelity_values[0, :] = \

@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 
 from scipy.linalg import expm
 from numpy import pi, cos, sin, exp, sqrt, arctan2
-dagger = lambda u : np.transpose(np.conjugate(u))
 
 ket_r1 = np.asarray([[1], [0], [0], [0], [0], [0], [0], [0]], dtype=complex)
 ket_1r = np.asarray([[0], [1], [0], [0], [0], [0], [0], [0]], dtype=complex)

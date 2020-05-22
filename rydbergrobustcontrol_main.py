@@ -24,58 +24,23 @@
 
 from __future__ import division
 
-import rydbergatoms
 import grape
-import robustcostfunctions
+import rydbergcontrol
 
-from numpy import pi
-
-hamiltonian_parameters = {
-    'OmegaRa' : 1, \
-    'OmegaRb' : 1, \
-    'OmegaMWa' : 1, \
-    'OmegaMWb' : 1, \
-    'DeltaRa' : 0.01, \
-    'DeltaRb' : 0.01, \
-    'DeltaMWa' : 0.01, \
-    'DeltaMWb' : 0.01, \
-}
-
-hamiltonian_base_parameters = {
-    'OmegaR' : 1, \
-    'OmegaMW' : 1, \
-    'DeltaR' : 0.01, \
-    'DeltaMW' : 0.01, \
-}
+hamiltonian_base_parameters = rydbergcontrol.base_hamiltonian_parameters()
+hamiltonian_parameters = rydbergcontrol.hamiltonian_parameters()
 
 hamiltonian_uncertain_parameters = {
     'deltaDeltaRValues' : [-1/20, -1/20]
 }
 
 Nsteps_PiPulse = 16
-
-propagator_parameters = {
-    'HamiltonianParameters' : hamiltonian_parameters, \
-    'HamiltonianMatrix' : rydbergatoms.hamiltonian_PerfectBlockade, \
-    'HamiltonianMatrixGradient' : rydbergatoms.hamiltonian_grad_PerfectBlockade, \
-    'Nsteps' : 16 * Nsteps_PiPulse, \
-    'Tstep' : pi / Nsteps_PiPulse, \
-    'Tcontrol' : 16 * pi, \
-}
-
-control_problem = {
-    'ControlTask' : 'StateToStateMap', \
-    'Initialization' : 'Constant', \
-    'PropagatorParameters': propagator_parameters, \
-    'PureStateInitial': rydbergatoms.ket_00, \
-    'PureStateTarget': rydbergatoms.target_dressed_state(hamiltonian_parameters), \
-    #'PureStateTarget': (rydbergatoms.ket_01 + rydbergatoms.ket_10)/sqrt(2), \
-    'CostFunction' : robustcostfunctions.infidelity, \
-    'CostFunctionGrad' : robustcostfunctions.infidelity_gradient, \
-    #'CostFunctionGrad' : None, \
-    'HamiltonianBaseParameters' : hamiltonian_base_parameters, \
-    'HamiltonianUncertainParameters' : hamiltonian_uncertain_parameters, \
-}
+propagator_parameters = rydbergcontrol.phase_propagator_parameters(
+    hamiltonian_parameters, Nsteps_PiPulse, 16)
+control_problem = rydbergcontrol.state_control_problem(
+    hamiltonian_parameters, propagator_parameters, robust=True,
+    base_params=hamiltonian_base_parameters,
+    uncertain_params=hamiltonian_uncertain_parameters)
 
 if __name__ == '__main__':
     phi_opt, infidelity_min = grape.grape(control_problem, debug=True)

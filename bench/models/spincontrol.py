@@ -1,8 +1,8 @@
 import numpy as np
 
-from numpy import cos, sin
+from numpy import cos, sin, exp, pi
 
-import angularmomentum
+import spinoperators
 
 class ControllableSpin:
     """
@@ -15,10 +15,10 @@ class ControllableSpin:
 
     def __init__ (self, s):
         self.s = s
-        sx, sy, sz = angularmomentum.angularmomentumop(s)
+        self.sx, self.sy, self.sz = spinoperators.angular_momentum_operators(s)
 
 
-    def hamiltonian_spincontrol (phi):
+    def hamiltonian_spincontrol (self, phi):
         """
         Returns the spin control Hamiltonian
         """
@@ -27,7 +27,7 @@ class ControllableSpin:
 
         return sphi
 
-    def hamiltonian_spincontrol_grad (phi):
+    def hamiltonian_spincontrol_grad (self, phi):
         """
         Returns the gradient of the spin control Hamiltonian
         """
@@ -36,7 +36,7 @@ class ControllableSpin:
 
         return sphi_grad
 
-    def unitary_spincontrol (theta, phi):
+    def unitary_spincontrol (self, theta, phi):
         """
         Returns the unitary for a spin control Hamiltonian
 
@@ -51,7 +51,7 @@ class ControllableSpin:
         u = exp(-1j * theta * sphi)
         return u
 
-    def unitary_spincontrol_grad (theta, phi):
+    def unitary_spincontrol_grad (self, theta, phi):
         """
         
         Returns the unitary for a spin control Hamiltonian

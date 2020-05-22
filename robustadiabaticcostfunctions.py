@@ -25,10 +25,9 @@
 from __future__ import division
 
 import copy
-import itertools
 import numpy as np
-import costfunctions
 import propagators
+import fidelity
 
 def infidelity_unitary(phi, control_params):
     """
@@ -68,26 +67,18 @@ def infidelity_unitary(phi, control_params):
     hamiltonian_landmarks_list = control_params['HamiltonianLandmarks']
     Nlandmarks = len(hamiltonian_landmarks_list)
 
-    Nterms_average = Nlandmarks
     Nsteps = control_params['PropagatorParameters']['Nsteps']
-
-    DeltaR = control_params['HamiltonianBaseParameters']['DeltaR']
 
     u_params = control_params.get('PropagatorParameters')
 
     u_target = control_params.get('UnitaryTarget')
     Nstates = control_params.get('NStatesUnitary')
 
-    u_dress_dict = control_params.get('UnitaryDressing')
-    u_undress_dict = control_params.get('UnitaryUndressing')
-
-    u_target_dagger = u_target.conjugate().transpose()
-
     # Check for the matrix rank of the desired unitary to use for calculating
     # infidelity for a partial isometry
     if Nstates == None:
         Nstates = np.linalg.matrix_rank(u_target)
-        control_params['Nstates'] = Nstates
+        control_params['NStatesUnitary'] = Nstates
 
     F_average = 0
     F_average_gradient = np.zeros(Nsteps)
@@ -137,23 +128,20 @@ def infidelity_unitary(phi, control_params):
         u_protocol = np.dot(u_undress, np.dot(u, u_dress))
         u_protocol_dagger = np.conjugate(np.transpose(u_protocol))
 
-        F = np.abs(np.trace(np.dot(u_protocol, u_target_dagger)))**2 / Nstates**2
-        F_average += F
+        F = fidelity.unitary_fidelity(u_protocol, u_target, Nstates)
+        F_average += landmark_weights[l] * F
 
         Infidelities[l] = 1-F
 
         for n in range(Nsteps):
             u_protocol_gradient_step = np.dot(u_undress, np.dot(u_gradient[n], u_dress))
 
-            F_average_gradient[n] += 2*np.real(\
-              np.trace(np.dot(u_target_dagger, u_protocol_gradient_step))
-              * np.trace(np.dot(u_target, u_protocol_dagger))) / Nstates**2
+            F_average_gradient[n] -= landmark_weights[l] * fidelity.unitary_infidelity_gradient(
+                u_protocol, [u_protocol_gradient_step], u_target, Nstates)[0]
 
 
-    F_average = F_average/Nterms_average
     I_average = 1 - F_average
 
-    F_average_gradient /= Nterms_average
     I_average_gradient = - F_average_gradient
 
     Niterations_sofar = control_params.get('NInfidelityEvaluations')
@@ -177,6 +165,7 @@ def infidelity_unitary(phi, control_params):
 
         control_params['InfidelityEvaluationInformation'].append(function_evaluation_information)
 
-    print(Niterations_sofar, Infidelities, I_average)
+    if debug_flag != None and debug_flag == True:
+        print(Niterations_sofar, Infidelities, I_average)
 
     return I_average, I_average_gradient

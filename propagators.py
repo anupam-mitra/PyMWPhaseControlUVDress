@@ -30,8 +30,6 @@ import scipy.linalg
 
 from scipy.linalg import expm as expm
 
-import utilities
-
 def propagator_step_derivative(h_step, h_step_deriv, Tstep):
     """
     Computes the derivative of a step of the piecewise constant
@@ -78,6 +76,48 @@ def propagator_step_derivative(h_step, h_step_deriv, Tstep):
 
     return u_step_derivative
 
+def _propagator_steps(phi, propagator_params, gradient=False):
+    Nsteps = propagator_params['Nsteps']
+    Tstep = propagator_params['Tstep']
+    hamiltonian_func = propagator_params['HamiltonianMatrix']
+    h_params = propagator_params['HamiltonianParameters']
+
+    h_steps = [hamiltonian_func(phi[n], h_params) for n in range(Nsteps)]
+    u_steps = [expm(-1j*Tstep*h) for h in h_steps]
+
+    if not gradient:
+        return h_steps, u_steps
+
+    hamiltonian_grad_func = propagator_params['HamiltonianMatrixGradient']
+    h_grad_steps = [hamiltonian_grad_func(phi[n], h_params) for n in range(Nsteps)]
+    return h_steps, u_steps, h_grad_steps
+
+def _propagator_from_steps(u_steps):
+    dimensions = u_steps[0].shape[0]
+    u = np.identity(dimensions, dtype=complex)
+    for u_step in u_steps:
+        u = np.dot(u_step, u)
+    return u
+
+def _gradient_from_steps(h_steps, u_steps, h_grad_steps, Tstep):
+    dimensions = h_steps[0].shape[0]
+    u_gradient = []
+
+    for n in range(len(h_steps)):
+        u_gradient.append(np.identity(dimensions, dtype=complex))
+
+        for m in range(n):
+            u_gradient[n] = np.dot(u_steps[m], u_gradient[n])
+
+        u_step_derivative = propagator_step_derivative(
+                                        h_steps[n], h_grad_steps[n], Tstep)
+        u_gradient[n] = np.dot(u_step_derivative, u_gradient[n])
+
+        for m in range(n+1, len(h_steps)):
+            u_gradient[n] = np.dot(u_steps[m], u_gradient[n])
+
+    return u_gradient
+
 def propagator_gradient (phi, propagator_params):
     """
     Computes the gradient of the propagator with respect to
@@ -102,37 +142,10 @@ def propagator_gradient (phi, propagator_params):
     variables
     """
 
-    Nsteps = propagator_params.get('Nsteps')
-    Tstep = propagator_params.get('Tstep')
-    Tcontrol = propagator_params.get('Tcontrol')
+    Tstep = propagator_params['Tstep']
+    h_steps, u_steps, h_grad_steps = _propagator_steps(phi, propagator_params, True)
 
-    hamiltonian_func = propagator_params.get('HamiltonianMatrix')
-    hamiltonian_grad_func = propagator_params.get('HamiltonianMatrixGradient')
-
-    h_params = propagator_params.get('HamiltonianParameters')
-
-    h_steps = [hamiltonian_func(phi[n], h_params) for n in range(Nsteps)]
-    u_steps = [expm(-1j*Tstep*h) for h in h_steps]
-    h_grad_steps = [hamiltonian_grad_func(phi[n], h_params) for n in range(Nsteps)]
-
-    dimensions = h_steps[0].shape[0]
-
-    u_gradient = []
-
-    for n in range(Nsteps):
-        u_gradient.append(np.identity(dimensions, dtype=complex))
-
-        for m in range(n):
-            u_gradient[n] = np.dot(u_steps[m], u_gradient[n])
-
-        u_step_derivative = propagator_step_derivative(\
-                                        h_steps[n], h_grad_steps[n], Tstep)
-        u_gradient[n] = np.dot(u_step_derivative, u_gradient[n])
-
-        for m in range(n+1, Nsteps):
-            u_gradient[n] = np.dot(u_steps[m], u_gradient[n])
-
-    return u_gradient
+    return _gradient_from_steps(h_steps, u_steps, h_grad_steps, Tstep)
 
 
 def propagator (phi, propagator_params):
@@ -155,26 +168,18 @@ def propagator (phi, propagator_params):
     Propagator evaluated at given values of the control
     variables
     """
-    Nsteps = propagator_params['Nsteps']
-    Tstep = propagator_params['Tstep']
-    Tcontrol = propagator_params['Tcontrol']
+    h_steps, u_steps = _propagator_steps(phi, propagator_params)
 
-    hamiltonian_func = propagator_params['HamiltonianMatrix']
-    h_params = propagator_params['HamiltonianParameters']
-
-    h_steps = [hamiltonian_func(phi[n], h_params) for n in range(Nsteps)]
-    u_steps = [expm(-1j*Tstep*h) for h in h_steps]
-
-    dimensions = h_steps[0].shape[0]
-    u = np.identity(dimensions, dtype=complex)
-
-    for n in range(Nsteps):
-        u = np.dot(u_steps[n], u)
-
-    return u
+    return _propagator_from_steps(u_steps)
 
 def propagator_with_gradient (phi, propagator_params):
     """
     Computes the propagator and its gradient at given control variables.
     """
-    return propagator(phi, propagator_params), propagator_gradient(phi, propagator_params)
+    Tstep = propagator_params['Tstep']
+    h_steps, u_steps, h_grad_steps = _propagator_steps(phi, propagator_params, True)
+
+    return (
+        _propagator_from_steps(u_steps),
+        _gradient_from_steps(h_steps, u_steps, h_grad_steps, Tstep),
+    )

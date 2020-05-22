@@ -66,18 +66,3 @@ control_problem = {
 
 if __name__ == '__main__':
     phi_opt, infidelity_min = grape.grape(control_problem, debug=True)
-    
-else:
-    Niterations = 2
-    overlaps = np.empty(Niterations)
-    infidelities_design = np.empty(Niterations)
-    for i in range(0, Niterations):
-        print('Iteration %d' % i)
-        
-        u_target = randommatrices.gen_randomUnitaryNearIdentity(Ndim, epsilon=1)
-        overlap_with_identity = np.abs(np.trace(u_target))**2/(u_target.shape[0])**2
-        overlaps[i] = overlap_with_identity
-
-        control_problem['UnitaryTarget'] = u_target        
-        phi_opt, infidelity_min = grape.grape(control_problem, debug=True)
-        infidelities_design[i] = infidelity_min
