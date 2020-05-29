@@ -59,8 +59,8 @@ control_problem = {
     'Initialization' : 'Sine', \
     'UnitaryTarget' : u_target, \
     'PropagatorParameters': propagator_parameters, \
-    'CostFunction' : costfunctions.infidelity_unitary, \
-    'CostFunctionGrad' : costfunctions.infidelity_unitary_gradient, \
+    'CostFunction' : objectives.infidelity_unitary, \
+    'CostFunctionGrad' : objectives.infidelity_unitary_gradient, \
     #'CostFunctionGrad' : None, \
 }
 

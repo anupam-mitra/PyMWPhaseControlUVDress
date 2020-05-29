@@ -106,7 +106,7 @@ control_problem = {
     'Initialization' : 'Sine', \
     'UnitaryTarget': u_target, \
     'PropagatorParameters': propagator_parameters, \
-    'CostFunction' : robustadiabaticcostfunctions.infidelity_unitary, \
+    'CostFunction' : objectives.robust_adiabatic_infidelity_unitary, \
     'HamiltonianBaseParameters' : hamiltonian_base_parameters, \
     'HamiltonianLandmarks': hamiltonian_landmarks_list, \
     'InfidelityEvaluationInformation': [], \
