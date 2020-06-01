@@ -2,8 +2,7 @@ import numpy as np
 
 from numpy import pi
 
-import costfunctions
-import robustcostfunctions
+import objectives
 import rydbergatoms
 
 
@@ -51,7 +50,7 @@ def controlled_z_unitary():
 def state_control_problem(hamiltonian_params, propagator_params,
                           initialization='Constant', robust=False,
                           base_params=None, uncertain_params=None):
-    module = robustcostfunctions if robust else costfunctions
+    module = objectives
     control_problem = {
         'ControlTask': 'StateToStateMap',
         'Initialization': initialization,
@@ -72,7 +71,7 @@ def state_control_problem(hamiltonian_params, propagator_params,
 def unitary_control_problem(propagator_params, target=None, initialization='Random',
                             robust=False, base_params=None, uncertain_params=None,
                             dress_target=False):
-    module = robustcostfunctions if robust else costfunctions
+    module = objectives
     if target is None:
         target = controlled_z_unitary()
 

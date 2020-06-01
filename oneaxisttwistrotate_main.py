@@ -28,7 +28,7 @@ import numpy as np
 
 import oneaxistwistrotate
 import grape
-import costfunctions
+import objectives
 import randommatrices
 
 from numpy import sqrt, pi

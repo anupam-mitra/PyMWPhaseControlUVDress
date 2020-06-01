@@ -39,7 +39,7 @@ OUTPUT_DIR = os.path.expanduser('~/RydbergGates/output/')
 import adiabaticevolution
 import grape
 import rydbergatoms
-import robustadiabaticcostfunctions
+import objectives
 
 hamiltonian_base_parameters = {
     'OmegaR' : 2*pi * 4, \
