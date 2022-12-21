@@ -1,0 +1,15 @@
+hamiltonian_params:
+  regime: "1-photon"
+  V_rr: 0.6283185307179586
+  Omega_max: 6.283185307179586
+  Omega_min: 0.0
+  t_mid: 0.0
+  n_gaussian_widths: 4
+  Delta_max: -12.566370614359172
+  Delta_min: -1.884955592153876
+  t_gaussian_width: 1.909859317102744
+  t_constant_duration: 17.435356680443814
+control_params:
+  Nsteps: 100
+  Tcontrol: 32.7142419188588
+  Initialization: "Constant"
