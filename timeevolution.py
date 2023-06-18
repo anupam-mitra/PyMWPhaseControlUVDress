@@ -28,6 +28,8 @@ import numpy as np
 import scipy.linalg
 from scipy.linalg import expm as expm
 
+from params import PropagatorParameters
+
 def dagger(u):
     return np.transpose(np.conjugate(u))
 
@@ -78,10 +80,20 @@ def propagator_step_derivative(h_step, h_step_deriv, Tstep):
     return u_step_derivative
 
 def _propagator_steps(phi, propagator_params, gradient=False):
-    Nsteps = propagator_params['Nsteps']
-    Tstep = propagator_params['Tstep']
-    hamiltonian_func = propagator_params['HamiltonianMatrix']
-    h_params = propagator_params['HamiltonianParameters']
+    if isinstance(propagator_params, dict):
+        from params import PropagatorParameters
+        # Simple inline conversion for now, or we could call a helper
+        Nsteps = propagator_params['Nsteps']
+        Tstep = propagator_params['Tstep']
+        hamiltonian_func = propagator_params['HamiltonianMatrix']
+        h_params = propagator_params['HamiltonianParameters']
+        hamiltonian_grad_func = propagator_params.get('HamiltonianMatrixGradient')
+    else:
+        Nsteps = propagator_params.Nsteps
+        Tstep = propagator_params.Tstep
+        hamiltonian_func = propagator_params.hamiltonian_matrix_func
+        h_params = propagator_params.hamiltonian_params
+        hamiltonian_grad_func = propagator_params.hamiltonian_matrix_grad_func
 
     h_steps = [hamiltonian_func(phi[n], h_params) for n in range(Nsteps)]
     u_steps = [expm(-1j*Tstep*h) for h in h_steps]
@@ -89,7 +101,6 @@ def _propagator_steps(phi, propagator_params, gradient=False):
     if not gradient:
         return h_steps, u_steps
 
-    hamiltonian_grad_func = propagator_params['HamiltonianMatrixGradient']
     h_grad_steps = [hamiltonian_grad_func(phi[n], h_params) for n in range(Nsteps)]
     return h_steps, u_steps, h_grad_steps
 
@@ -130,14 +141,7 @@ def propagator (phi, propagator_params):
     gradient of the propagator
 
     propagator_params:
-    Dictionary representing parameters of the propagator with
-    the following keys
-
-    Returns
-    -------
-    u:
-    Propagator evaluated at given values of the control
-    variables
+    PropagatorParameters dataclass or dictionary representing parameters of the propagator
     """
     h_steps, u_steps = _propagator_steps(phi, propagator_params)
 
@@ -156,18 +160,14 @@ def propagator_gradient (phi, propagator_params):
     gradient of the propagator
 
     propagator_params:
-    Dictionary representing parameters of the propagator with
-    the following keys
-
-    Returns
-    -------
-    u_gradient:
-    Gradient of the propagator with respect to the control
-    variables, evaluated at given values of the control
-    variables
+    PropagatorParameters dataclass or dictionary representing parameters of the propagator
     """
 
-    Tstep = propagator_params['Tstep']
+    if isinstance(propagator_params, dict):
+        Tstep = propagator_params['Tstep']
+    else:
+        Tstep = propagator_params.Tstep
+
     h_steps, u_steps, h_grad_steps = _propagator_steps(phi, propagator_params, True)
 
     return _gradient_from_steps(h_steps, u_steps, h_grad_steps, Tstep)
@@ -176,7 +176,11 @@ def propagator_with_gradient (phi, propagator_params):
     """
     Computes the propagator and its gradient at given control variables.
     """
-    Tstep = propagator_params['Tstep']
+    if isinstance(propagator_params, dict):
+        Tstep = propagator_params['Tstep']
+    else:
+        Tstep = propagator_params.Tstep
+        
     h_steps, u_steps, h_grad_steps = _propagator_steps(phi, propagator_params, True)
 
     return (

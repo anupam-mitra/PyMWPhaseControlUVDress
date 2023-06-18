@@ -29,6 +29,7 @@ import scipy.linalg
 import scipy.optimize
 
 from numpy import pi
+from params import ControlProblem
 
 def grape (control_problem, debug=False, gtol=1e-5, maxiter=None):
     """
@@ -38,19 +39,22 @@ def grape (control_problem, debug=False, gtol=1e-5, maxiter=None):
     Parameters
     ----------
     control_problem:
-    Dictionary containing the parameters for the control problem being solved
+    ControlProblem dataclass or dictionary containing the parameters for the control problem being solved
 
     gtol:
     Minimum absolute value of gradient at which to stop
     """
 
-    cost_function = control_problem.get('CostFunction')
-    cost_function_grad = control_problem.get('CostFunctionGrad')
-    Nsteps = control_problem.get('PropagatorParameters').get('Nsteps')
+    if isinstance(control_problem, dict):
+        control_problem = ControlProblem.from_dict(control_problem)
+
+    cost_function = control_problem.cost_function
+    cost_function_grad = control_problem.cost_function_grad
+    Nsteps = control_problem.propagator_params.Nsteps
 
 
-    if control_problem.get('Initialization') != None:
-        initialization = control_problem['Initialization']
+    if control_problem.initialization != 'Random':
+        initialization = control_problem.initialization
     else:
         initialization = 'Random'
 
@@ -92,6 +96,6 @@ def grape (control_problem, debug=False, gtol=1e-5, maxiter=None):
                'Niterations' : Niterations, \
     }
 
-    control_problem['Results'] = results
+    control_problem.results = results
 
     return phi_des, infidelity_min

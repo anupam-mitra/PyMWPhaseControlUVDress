@@ -29,6 +29,8 @@ import numpy as np
 import fidelity
 from timeevolution import propagator, propagator_with_gradient
 
+from params import ControlProblem
+
 def infidelity (phi, control_params):
     """
     Computes the infidelity for a control task 
@@ -40,8 +42,7 @@ def infidelity (phi, control_params):
     gradient of the propagainfidelitytor
     
     control_params:
-    Dictionary representing parameters of the control problem
-    with the following keys
+    ControlProblem dataclass or dictionary representing parameters of the control problem
     
     Returns
     -------
@@ -50,10 +51,13 @@ def infidelity (phi, control_params):
     variables
     """
         
-    u_params = control_params.get('PropagatorParameters')
+    if isinstance(control_params, dict):
+        control_params = ControlProblem.from_dict(control_params)
+
+    u_params = control_params.propagator_params
     
-    ket_initial = control_params.get('PureStateInitial')
-    ket_target = control_params.get('PureStateTarget')
+    ket_initial = control_params.pure_state_initial
+    ket_target = control_params.pure_state_target
     u = propagator(phi, u_params)
     return fidelity.state_infidelity(u, ket_initial, ket_target)
 
@@ -68,8 +72,7 @@ def infidelity_gradient (phi, control_params):
     gradient of the propagator
     
     control_params:
-    Dictionary representing parameters of the control problem
-    with the following keys
+    ControlProblem dataclass or dictionary representing parameters of the control problem
     
     Returns
     -------
@@ -79,9 +82,12 @@ def infidelity_gradient (phi, control_params):
     variables
    
     """
-    u_params = control_params.get('PropagatorParameters')
-    ket_initial = control_params.get('PureStateInitial')
-    ket_target = control_params.get('PureStateTarget')
+    if isinstance(control_params, dict):
+        control_params = ControlProblem.from_dict(control_params)
+
+    u_params = control_params.propagator_params
+    ket_initial = control_params.pure_state_initial
+    ket_target = control_params.pure_state_target
     u, u_gradient = propagator_with_gradient(phi, u_params)
     return fidelity.state_infidelity_gradient(u, u_gradient, ket_initial, ket_target)
 
@@ -97,8 +103,7 @@ def infidelity_unitary (phi, control_params):
     gradient of the propagainfidelitytor
     
     control_params:
-    Dictionary representing parameters of the control problem
-    with the following keys
+    ControlProblem dataclass or dictionary representing parameters of the control problem
     
     Returns
     -------
@@ -107,17 +112,21 @@ def infidelity_unitary (phi, control_params):
     variables
     """
         
-    u_params = control_params.get('PropagatorParameters')
+    if isinstance(control_params, dict):
+        control_params = ControlProblem.from_dict(control_params)
+
+    u_params = control_params.propagator_params
     
-    u_target = control_params.get('UnitaryTarget')
-    Nstates = control_params.get('NStatesUnitary')
+    u_target = control_params.unitary_target
+    Nstates = control_params.n_states_unitary
     
     if Nstates == None:
         Nstates = np.linalg.matrix_rank(u_target)
-        control_params['NStatesUnitary'] = Nstates
-         
+        control_params.n_states_unitary = Nstates
+          
     u = propagator(phi, u_params)
     return fidelity.unitary_infidelity(u, u_target, Nstates)
+
 
 def infidelity_unitary_gradient (phi, control_params):
     """
@@ -130,8 +139,7 @@ def infidelity_unitary_gradient (phi, control_params):
     gradient of the propagainfidelitytor
     
     control_params:
-    Dictionary representing parameters of the control problem
-    with the following keys
+    ControlProblem dataclass or dictionary representing parameters of the control problem
     
     Returns
     -------
@@ -140,25 +148,32 @@ def infidelity_unitary_gradient (phi, control_params):
     variables
     """
         
-    u_params = control_params.get('PropagatorParameters')
+    if isinstance(control_params, dict):
+        control_params = ControlProblem.from_dict(control_params)
+
+    u_params = control_params.propagator_params
     
-    u_target = control_params.get('UnitaryTarget')
-    Nstates = control_params.get('NStatesUnitary')
+    u_target = control_params.unitary_target
+    Nstates = control_params.n_states_unitary
     if Nstates == None:
         Nstates = np.linalg.matrix_rank(u_target)
-        control_params['NStatesUnitary'] = Nstates
+        control_params.n_states_unitary = Nstates
 
     u, u_gradient = propagator_with_gradient(phi, u_params)
     return fidelity.unitary_infidelity_gradient(u, u_gradient, u_target, Nstates)
 
 def _delta_r_pairs(control_params):
-    h_inhomo = control_params['HamiltonianUncertainParameters']
+    if isinstance(control_params, dict):
+        control_params = ControlProblem.from_dict(control_params)
+    h_inhomo = control_params.hamiltonian_uncertain_params
     deltaR_values = h_inhomo['deltaDeltaRValues']
     return itertools.product(deltaR_values, deltaR_values), len(deltaR_values)**2
 
 def _set_delta_r(control_params, deltaRa, deltaRb):
-    DeltaR = control_params['HamiltonianBaseParameters']['DeltaR']
-    h_params = control_params['PropagatorParameters']['HamiltonianParameters']
+    if isinstance(control_params, dict):
+        control_params = ControlProblem.from_dict(control_params)
+    DeltaR = control_params.hamiltonian_base_params['DeltaR']
+    h_params = control_params.propagator_params.hamiltonian_params
     h_params['DeltaRa'] = DeltaR + deltaRa
     h_params['DeltaRb'] = DeltaR + deltaRb
 
@@ -177,8 +192,7 @@ def robust_infidelity (phi, control_params):
     gradient of the propagator
     
     control_params:
-    Dictionary representing parameters of the control problem
-    with the following keys
+    ControlProblem dataclass or dictionary representing parameters of the control problem
     
     Returns
     -------
@@ -187,6 +201,9 @@ def robust_infidelity (phi, control_params):
     variables, averaged over all inhomogeneities
     """
   
+    if isinstance(control_params, dict):
+        control_params = ControlProblem.from_dict(control_params)
+        
     I_mean = 0
     delta_r_pairs, Nterms_average = _delta_r_pairs(control_params)
 
@@ -213,8 +230,7 @@ def robust_infidelity_gradient (phi, control_params):
     gradient of the propagator
     
     control_params:
-    Dictionary representing parameters of the control problem
-    with the following keys
+    ControlProblem dataclass or dictionary representing parameters of the control problem
     
     Returns
     -------
@@ -224,8 +240,10 @@ def robust_infidelity_gradient (phi, control_params):
     variables
    
     """
+    if isinstance(control_params, dict):
+        control_params = ControlProblem.from_dict(control_params)
 
-    Nsteps = control_params['PropagatorParameters']['Nsteps']
+    Nsteps = control_params.propagator_params.Nsteps
     I_gradient_mean = np.zeros(Nsteps)
     delta_r_pairs, Nterms_average = _delta_r_pairs(control_params)
 
@@ -252,8 +270,7 @@ def robust_infidelity_unitary(phi, control_params):
     gradient of the propagator
     
     control_params:
-    Dictionary representing parameters of the control problem
-    with the following keys
+    ControlProblem dataclass or dictionary representing parameters of the control problem
     
     Returns
     -------
@@ -261,6 +278,8 @@ def robust_infidelity_unitary(phi, control_params):
     Infidelity = 1 - fidelity evaluated at given values of the control
     variables, averaged over all inhomogeneities
     """
+    if isinstance(control_params, dict):
+        control_params = ControlProblem.from_dict(control_params)
 
     I_mean = 0
     delta_r_pairs, Nterms_average = _delta_r_pairs(control_params)
@@ -288,8 +307,7 @@ def robust_infidelity_unitary_gradient (phi, control_params):
     gradient of the propagator
     
     control_params:
-    Dictionary representing parameters of the control problem
-    with the following keys
+    ControlProblem dataclass or dictionary representing parameters of the control problem
     
     Returns
     -------
@@ -299,8 +317,10 @@ def robust_infidelity_unitary_gradient (phi, control_params):
     variables
    
     """
+    if isinstance(control_params, dict):
+        control_params = ControlProblem.from_dict(control_params)
 
-    Nsteps = control_params['PropagatorParameters']['Nsteps']
+    Nsteps = control_params.propagator_params.Nsteps
     I_gradient_mean = np.zeros(Nsteps)
     delta_r_pairs, Nterms_average = _delta_r_pairs(control_params)
 
@@ -328,8 +348,7 @@ def robust_adiabatic_infidelity_unitary(phi, control_params):
     gradient of the propagator
     
     control_params:
-    Dictionary representing parameters of the control problem
-    with the following keys
+    ControlProblem dataclass or dictionary representing parameters of the control problem
     
     Returns
     -------
@@ -342,22 +361,24 @@ def robust_adiabatic_infidelity_unitary(phi, control_params):
     control variables evaluated at given values of the control
     variables
     """
+    if isinstance(control_params, dict):
+        control_params = ControlProblem.from_dict(control_params)
 
-    hamiltonian_landmarks_list = control_params['HamiltonianLandmarks']
+    hamiltonian_landmarks_list = control_params.hamiltonian_landmarks
     Nlandmarks = len(hamiltonian_landmarks_list)
 
-    Nsteps = control_params['PropagatorParameters']['Nsteps']
+    Nsteps = control_params.propagator_params.Nsteps
 
-    u_params = control_params.get('PropagatorParameters')
+    u_params = control_params.propagator_params
 
-    u_target = control_params.get('UnitaryTarget')
-    Nstates = control_params.get('NStatesUnitary')
+    u_target = control_params.unitary_target
+    Nstates = control_params.n_states_unitary
 
     # Check for the matrix rank of the desired unitary to use for calculating
     # infidelity for a partial isometry
     if Nstates == None:
         Nstates = np.linalg.matrix_rank(u_target)
-        control_params['NStatesUnitary'] = Nstates
+        control_params.n_states_unitary = Nstates
 
     F_average = 0
     F_average_gradient = np.zeros(Nsteps)
@@ -369,8 +390,8 @@ def robust_adiabatic_infidelity_unitary(phi, control_params):
     unitary_mwcontrol_landmarkwise = []
     unitary_mwcontrol_gradient_landmarkwise = []
 
-    if 'LandmarkWeights' in control_params:
-        landmark_weights = control_params.get('LandmarkWeights')
+    if control_params.landmark_weights is not None:
+        landmark_weights = control_params.landmark_weights
     else:
         landmark_weights = np.ones((Nlandmarks, )) / Nlandmarks
 
@@ -382,15 +403,14 @@ def robust_adiabatic_infidelity_unitary(phi, control_params):
 
         u_params_current = copy.deepcopy(u_params)
 
-        u_params_current['HamiltonianParameters']['DeltaRa'] \
-        = DeltaRa
-        u_params_current['HamiltonianParameters']['DeltaRb'] \
-        = DeltaRb
+        # We assume h_params is a dict for now as per original code
+        u_params_current.hamiltonian_params['DeltaRa'] = DeltaRa
+        u_params_current.hamiltonian_params['DeltaRb'] = DeltaRb
 
         u, u_gradient = propagator_with_gradient(phi, u_params_current)
 
-        u_dress = control_params['UnitaryDressingLandmarks'][l]
-        u_undress = control_params['UnitaryUnDressingLandmarks'][l]
+        u_dress = control_params.unitary_dressing_landmarks[l]
+        u_undress = control_params.unitary_undressing_landmarks[l]
 
         u_protocol = np.dot(u_undress, np.dot(u, u_dress))
 
