@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import pi
 import objectives
-import rydbergatoms
+import rydberghamiltonians
 from params import ControlProblem, PropagatorParameters
 
 
@@ -31,8 +31,8 @@ def base_hamiltonian_parameters(OmegaR=1, OmegaMW=1, DeltaR=0.01, DeltaMW=0.01):
 def phase_propagator_parameters(hamiltonian_params, nsteps_pi_pulse, n_pi_pulses):
     return PropagatorParameters(
         hamiltonian_params=hamiltonian_params,
-        hamiltonian_matrix_func=rydbergatoms.hamiltonian_PerfectBlockade,
-        hamiltonian_matrix_grad_func=rydbergatoms.hamiltonian_grad_PerfectBlockade,
+        hamiltonian_matrix_func=rydberghamiltonians.hamiltonian_PerfectBlockade,
+        hamiltonian_matrix_grad_func=rydberghamiltonians.hamiltonian_grad_PerfectBlockade,
         Nsteps=n_pi_pulses * nsteps_pi_pulse,
         Tstep=pi / nsteps_pi_pulse,
         Tcontrol=n_pi_pulses * pi,
@@ -40,10 +40,10 @@ def phase_propagator_parameters(hamiltonian_params, nsteps_pi_pulse, n_pi_pulses
 
 
 def controlled_z_unitary():
-    return rydbergatoms.ket_00 * rydbergatoms.bra_00 \
-         + rydbergatoms.ket_01 * rydbergatoms.bra_01 \
-         + rydbergatoms.ket_10 * rydbergatoms.bra_10 \
-         - rydbergatoms.ket_11 * rydbergatoms.bra_11
+    return rydberghamiltonians.ket_00 * rydberghamiltonians.bra_00 \
+         + rydberghamiltonians.ket_01 * rydberghamiltonians.bra_01 \
+         + rydberghamiltonians.ket_10 * rydberghamiltonians.bra_10 \
+         - rydberghamiltonians.ket_11 * rydberghamiltonians.bra_11
 
 
 def state_control_problem(hamiltonian_params, propagator_params,
@@ -53,8 +53,8 @@ def state_control_problem(hamiltonian_params, propagator_params,
     control_problem = ControlProblem(
         initialization=initialization,
         propagator_params=propagator_params,
-        pure_state_initial=rydbergatoms.ket_00,
-        pure_state_target=rydbergatoms.target_dressed_state(hamiltonian_params),
+        pure_state_initial=rydberghamiltonians.ket_00,
+        pure_state_target=rydberghamiltonians.target_dressed_state(hamiltonian_params),
         cost_function=module.infidelity,
         cost_function_grad=module.infidelity_gradient,
     )
@@ -76,7 +76,7 @@ def unitary_control_problem(propagator_params, target=None, initialization='Rand
 
     if dress_target:
         h_params = propagator_params.hamiltonian_params if not isinstance(propagator_params, dict) else propagator_params['HamiltonianParameters']
-        u_dress = rydbergatoms.dressing_unitary(h_params)
+        u_dress = rydberghamiltonians.dressing_unitary(h_params)
         target = np.dot(u_dress, np.dot(target, u_dress.transpose().conjugate()))
 
     control_problem = ControlProblem(
@@ -92,4 +92,3 @@ def unitary_control_problem(propagator_params, target=None, initialization='Rand
         control_problem.hamiltonian_uncertain_params = uncertain_params
 
     return control_problem
-

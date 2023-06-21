@@ -1,40 +1,7 @@
-"""
-2019-02-22
-==========
-I want to implement the microwave optimal control based implementation
-of the two qubit entangling unitary
+"""Legacy unitary-sequence analysis helpers for two-qubit control.
 
-
-Global TODO
-===========
-10. [DONE] introduce a callback function or object to calculate the spin matrices
-  sx, sy, sz
-20. [DONE] check passing of variables between calculation of unitaries and
-30. [DONE] calculation of infidelity
-
-40. [DONE] implement the minimization of the infidelity cost function
-50. [DONE] calculate `thetarotate` and `thetatwist` using estimates of els1, els2
-60. [DONE] introduce the interleaved ultraviolet steps between microwave steps
-70. [DONE] implement imhomogeneities and uncertainties in parameters and averaging over
-  these parameters
-  
-
-80. [DONE] perform sanity checks
-90. [DONE] implement analysis to be performed, refactor code appropriately
-100. [DONE] debug
-
-105. Write a separate class for time evolving piecewise constant time
-     dependence
-110. add the possibility of not calculating gradients using a flag variable
-120. check gradient of unitary calculation
-130. compare gradient of unitary calculation to earlier implementation
-140. write about earlier implementations
-
-150. plot infidelity versus level of uncertainty in parameters
-160. plot number of steps versus uncertainty in parameters
-
-170. go over hardcoded values and how they can be generalized
-180. add perturbation theory calculations to estimation of accumulated phases
+This module keeps the original analysis logic used to compare ideal and
+uncertain dressing sequences.
 """
 
 import math
@@ -141,9 +108,7 @@ class TwoQubitSpin:
         self.identity = spin.identity
 
     def get_ndim (self):
-        # TODO
-        # This is currently hardcoded to the value for two qubits
-        return 4
+        return self.identity.shape[0]
 
     def get_sx(self):
         return self.sx
@@ -419,19 +384,12 @@ class ControlSequenceSearch:
     Represents a search for a control sequence to implement a
     """
 
-    def __init__ (self, system, gtol=1e-4, maxiter=1024):
+    def __init__ (self, system, gtol=1e-4, maxiter=1024, variable_bounds=None):
         self.system = system
         self.nsteps = system.get_nsteps()
         self.nvariables = system.get_nvariables()
 
-        # TODO
-        # Hardcoded for now.
-        # The minimum value for `theta` is 0
-        # and the minimum value for `phi` is 0.
-        # The maximum value for `theta` is `2*pi`
-        # and the maximum value for `phi` is `2*pi`
-
-        #self.variable_bounds = [(0, 2*pi) for v in range(self.nsteps * self.nvariables)]
+        self.variable_bounds = variable_bounds
 
         self.gtol = gtol
         self.maxiter = maxiter
@@ -444,12 +402,12 @@ class ControlSequenceSearch:
 
         cost_function = self.system.calc_infidelity
 
-        if hasattr(self, "variable_bounds"):
+        if self.variable_bounds is not None:
             result = scipy.optimize.minimize(\
-                 fun=cost_function, x0=variables_initial, jac=self.jac, method='L-BFGS-B', \
-                 bounds=self.variable_bounds, \
-                 options={'gtol': self.gtol, 'maxiter': self.maxiter,}, \
-                 args=None)
+                  fun=cost_function, x0=variables_initial, jac=self.jac, method='L-BFGS-B', \
+                  bounds=self.variable_bounds, \
+                  options={'gtol': self.gtol, 'maxiter': self.maxiter,}, \
+                  args=None)
 
         else:
             result = scipy.optimize.minimize(\
@@ -491,7 +449,7 @@ class UncertainTwoQubitUnitaryQuantumControl:
     """
 
     def __init__ (self, target, nsteps, adiabaticphases, spinoperator, \
-            distribwidth):
+            distribwidth, nlandmarks=7):
         self.target = target
         self.nsteps = nsteps
         self.nangles = 2
@@ -499,13 +457,8 @@ class UncertainTwoQubitUnitaryQuantumControl:
         self.spinoperator = spinoperator
 
         self.distribwidth = distribwidth
+        self.nlandmarks = nlandmarks
         self.ndim = spinoperator.get_ndim()
-
-        # TODO
-        # At present a Gaussian distribution with width `distribwidth is
-        # assumed. Moreover, the number of landmarks is also fixed to 7`
-
-        self.nlandmarks = 7
 
     def get_nvariables(self):
         return self.nangles
@@ -518,16 +471,16 @@ class UncertainTwoQubitUnitaryQuantumControl:
         Calculates the landmark points and their weights
         """
 
-        if not hasattr(self, "landmarks") or not hasattr(self, "landmarks"):
-            self.landmarks = np.linspace(\
-                -int(self.nlandmarks/2) * self.distribwidth, \
-                int(self.nlandmarks/2) * self.distribwidth, \
-                self.nlandmarks)
+        if self.distribwidth <= 0:
+            raise ValueError("distribwidth must be positive")
 
-        if not hasattr(self, "weights"):
-            self.weights = scipy.stats.norm.pdf(self.landmarks, \
-                scale=self.distribwidth)
+        cache_key = (self.nlandmarks, self.distribwidth)
+        if getattr(self, "_landmark_cache_key", None) != cache_key:
+            half_span = int(self.nlandmarks / 2) * self.distribwidth
+            self.landmarks = np.linspace(-half_span, half_span, self.nlandmarks)
+            self.weights = scipy.stats.norm.pdf(self.landmarks, scale=self.distribwidth)
             self.weights /= np.sum(self.weights)
+            self._landmark_cache_key = cache_key
 
         return self.landmarks, self.weights
     
@@ -536,11 +489,10 @@ class UncertainTwoQubitUnitaryQuantumControl:
         Prepares the systems which represent different members of the ensemble
         which needs to be addressed
         """
-        if not hasattr(self, "landmarks"):
-            landmarks, weights = self.calc_landmarks()
+        landmarks, weights = self.calc_landmarks()
         
-        if not hasattr(self, "systems"):
-       
+        cache_key = (self.nlandmarks, self.distribwidth)
+        if getattr(self, "_systems_cache_key", None) != cache_key:
             systems = []
     
             for l in range(self.nlandmarks):
@@ -548,9 +500,6 @@ class UncertainTwoQubitUnitaryQuantumControl:
                     self.target, self.nsteps, self.adiabaticphases, \
                     self.spinoperator)
     
-                # TODO
-                # Find a better way to calculate `unitary_uv` and put in the
-                # appropriate system
                 thetatwist, thetarotate = self.adiabaticphases.calc_phases()
                 unitary_uv = self.spinoperator.calc_zrotatetwist(\
                         thetarotate * (1+self.landmarks[l]), \
@@ -560,6 +509,7 @@ class UncertainTwoQubitUnitaryQuantumControl:
                 systems.append(qc)
                 
             self.systems = systems
+            self._systems_cache_key = cache_key
             
         return self.systems
 
@@ -573,23 +523,13 @@ class UncertainTwoQubitUnitaryQuantumControl:
         systems = self.calc_systems()
         
         infidelity_values = np.ones(self.nlandmarks)
-        dinfidelity_values = np.zeros((self.nangles * self.nsteps, \
-                                      self.nlandmarks))
         
         for l in range(self.nlandmarks):
             qc = systems[l]
-            infidelity_value, dinfidelity_value = qc.calc_infidelity(angles)
-            
+            infidelity_value, _ = qc.calc_infidelity(angles)
+
             infidelity_values[l] = infidelity_value
-            dinfidelity_values[:, l] = dinfidelity_value
 
         infidelity_mean = np.sum(self.weights * infidelity_values) 
-                        
-        dinfidelity_mean = np.zeros((self.nangles * self.nsteps))               
-    
-        for s in range(self.nangles * self.nsteps):
-            dinfidelity_mean[s] = \
-                np.sum(self.weights * dinfidelity_values[s, :])
-            
-        
-        return infidelity_mean#, dinfidelity_mean
+
+        return infidelity_mean

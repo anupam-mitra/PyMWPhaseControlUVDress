@@ -27,7 +27,7 @@ import copy
 import itertools
 import numpy as np
 import fidelity
-from timeevolution import propagator, propagator_with_gradient
+from core.evolution import propagator, propagator_with_gradient
 
 from params import ControlProblem
 
@@ -39,10 +39,10 @@ def infidelity (phi, control_params):
     ----------
     phi:
     Values of the control variables at which to evaluate the
-    gradient of the propagainfidelitytor
+    gradient of the propagator
     
     control_params:
-    ControlProblem dataclass or dictionary representing parameters of the control problem
+    ControlProblem dataclass representing parameters of the control problem
     
     Returns
     -------
@@ -51,15 +51,13 @@ def infidelity (phi, control_params):
     variables
     """
         
-    if isinstance(control_params, dict):
-        control_params = ControlProblem.from_dict(control_params)
-
     u_params = control_params.propagator_params
     
     ket_initial = control_params.pure_state_initial
     ket_target = control_params.pure_state_target
     u = propagator(phi, u_params)
     return fidelity.state_infidelity(u, ket_initial, ket_target)
+
 
 def infidelity_gradient (phi, control_params):
     """
@@ -72,7 +70,7 @@ def infidelity_gradient (phi, control_params):
     gradient of the propagator
     
     control_params:
-    ControlProblem dataclass or dictionary representing parameters of the control problem
+    ControlProblem dataclass representing parameters of the control problem
     
     Returns
     -------
@@ -82,14 +80,12 @@ def infidelity_gradient (phi, control_params):
     variables
    
     """
-    if isinstance(control_params, dict):
-        control_params = ControlProblem.from_dict(control_params)
-
     u_params = control_params.propagator_params
     ket_initial = control_params.pure_state_initial
     ket_target = control_params.pure_state_target
     u, u_gradient = propagator_with_gradient(phi, u_params)
     return fidelity.state_infidelity_gradient(u, u_gradient, ket_initial, ket_target)
+
 
 
 def infidelity_unitary (phi, control_params):
@@ -103,7 +99,7 @@ def infidelity_unitary (phi, control_params):
     gradient of the propagainfidelitytor
     
     control_params:
-    ControlProblem dataclass or dictionary representing parameters of the control problem
+    ControlProblem dataclass representing parameters of the control problem
     
     Returns
     -------
@@ -112,9 +108,6 @@ def infidelity_unitary (phi, control_params):
     variables
     """
         
-    if isinstance(control_params, dict):
-        control_params = ControlProblem.from_dict(control_params)
-
     u_params = control_params.propagator_params
     
     u_target = control_params.unitary_target
@@ -128,6 +121,7 @@ def infidelity_unitary (phi, control_params):
     return fidelity.unitary_infidelity(u, u_target, Nstates)
 
 
+
 def infidelity_unitary_gradient (phi, control_params):
     """
     Computes the gradient infidelity for a control task 
@@ -139,7 +133,7 @@ def infidelity_unitary_gradient (phi, control_params):
     gradient of the propagainfidelitytor
     
     control_params:
-    ControlProblem dataclass or dictionary representing parameters of the control problem
+    ControlProblem dataclass representing parameters of the control problem
     
     Returns
     -------
@@ -148,9 +142,6 @@ def infidelity_unitary_gradient (phi, control_params):
     variables
     """
         
-    if isinstance(control_params, dict):
-        control_params = ControlProblem.from_dict(control_params)
-
     u_params = control_params.propagator_params
     
     u_target = control_params.unitary_target
@@ -162,20 +153,18 @@ def infidelity_unitary_gradient (phi, control_params):
     u, u_gradient = propagator_with_gradient(phi, u_params)
     return fidelity.unitary_infidelity_gradient(u, u_gradient, u_target, Nstates)
 
+
 def _delta_r_pairs(control_params):
-    if isinstance(control_params, dict):
-        control_params = ControlProblem.from_dict(control_params)
     h_inhomo = control_params.hamiltonian_uncertain_params
     deltaR_values = h_inhomo['deltaDeltaRValues']
     return itertools.product(deltaR_values, deltaR_values), len(deltaR_values)**2
 
 def _set_delta_r(control_params, deltaRa, deltaRb):
-    if isinstance(control_params, dict):
-        control_params = ControlProblem.from_dict(control_params)
     DeltaR = control_params.hamiltonian_base_params['DeltaR']
     h_params = control_params.propagator_params.hamiltonian_params
     h_params['DeltaRa'] = DeltaR + deltaRa
     h_params['DeltaRb'] = DeltaR + deltaRb
+
 
 def robust_infidelity (phi, control_params):
     """

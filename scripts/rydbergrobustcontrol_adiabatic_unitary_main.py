@@ -36,8 +36,8 @@ from scipy.linalg import expm
 OUTPUT_DIR = os.path.expanduser('~/RydbergGates/output/')
 
 import adiabaticevolution
-import grape
-import rydbergatoms
+import control.optimization as grape
+import rydberghamiltonians
 import objectives
 
 hamiltonian_base_parameters = {
@@ -88,17 +88,17 @@ Tcontrol = Nsteps * Tstep
 
 propagator_parameters = {
     'HamiltonianParameters' : hamiltonian_parameters, \
-    'HamiltonianMatrix' : rydbergatoms.hamiltonian_PerfectBlockade, \
-    'HamiltonianMatrixGradient' : rydbergatoms.hamiltonian_grad_PerfectBlockade, \
+    'HamiltonianMatrix' : rydberghamiltonians.hamiltonian_PerfectBlockade, \
+    'HamiltonianMatrixGradient' : rydberghamiltonians.hamiltonian_grad_PerfectBlockade, \
     'Nsteps' : Nsteps, \
     'Tstep' : Tstep, \
     'Tcontrol' :  Tcontrol, \
 }
 
-u_target = rydbergatoms.ket_00 * rydbergatoms.bra_00 \
-         - rydbergatoms.ket_01 * rydbergatoms.bra_01 \
-         - rydbergatoms.ket_10 * rydbergatoms.bra_10 \
-         - rydbergatoms.ket_11 * rydbergatoms.bra_11
+u_target = rydberghamiltonians.ket_00 * rydberghamiltonians.bra_00 \
+         - rydberghamiltonians.ket_01 * rydberghamiltonians.bra_01 \
+         - rydberghamiltonians.ket_10 * rydberghamiltonians.bra_10 \
+         - rydberghamiltonians.ket_11 * rydberghamiltonians.bra_11
 
 control_problem = {
     'ControlTask' : 'UnitaryMap', \
@@ -118,7 +118,7 @@ adiabatic_parameters = {
     'DeltaR_max': 2*pi * 10, \
     'OmegaR_min': 0, \
     'OmegaR_max': 2*pi * 4, \
-    'HamiltonianMatrix' : rydbergatoms.hamiltonian_PerfectBlockade, \
+    'HamiltonianMatrix' : rydberghamiltonians.hamiltonian_PerfectBlockade, \
     'DimensionHilbertSpace': 8, \
     'Nsteps': 1024,
 }

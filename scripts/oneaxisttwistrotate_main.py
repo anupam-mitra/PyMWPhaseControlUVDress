@@ -25,8 +25,8 @@
 
 import numpy as np
 
-import oneaxistwistrotate
-import grape
+import spinhamiltonians
+import control.optimization as grape
 import objectives
 import randommatrices
 
@@ -46,8 +46,8 @@ Nsteps_PiPulse =  128
 
 propagator_parameters = {
     'HamiltonianParameters' : hamiltonian_parameters, \
-    'HamiltonianMatrix' : oneaxistwistrotate.hamiltonian_SpinSymmetric, \
-    'HamiltonianMatrixGradient' : oneaxistwistrotate.hamiltonian_grad_SpinSymmetric, \
+        'HamiltonianMatrix' : spinhamiltonians.hamiltonian_SpinSymmetric, \
+        'HamiltonianMatrixGradient' : spinhamiltonians.hamiltonian_grad_SpinSymmetric, \
     'Nsteps' : Nsteps_PiPulse, \
     'Tstep' : pi / Nsteps_PiPulse * Ndim, \
     'Tcontrol' : pi, \

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#  rydbergcontrol_main.py
+#  rydbergrobustcontrol_unitary_main.py
 #  
 #  Copyright 2017 Anupam Mitra <anupam@unm.edu>
 #  
@@ -23,17 +23,23 @@
 #  
 
 
-import grape
+import control.optimization as grape
 import rydbergcontrol
 
-hamiltonian_parameters = rydbergcontrol.hamiltonian_parameters(
-    DeltaR=2, DeltaMW=0.01, deltaRa=0.01, deltaRb=-0.01)
+hamiltonian_base_parameters = rydbergcontrol.base_hamiltonian_parameters()
+hamiltonian_parameters = rydbergcontrol.hamiltonian_parameters()
 
-Nsteps_PiPulse = 1
+hamiltonian_uncertain_parameters = {
+    'deltaDeltaRValues' : [-1/20, -1/20]
+}
+
+Nsteps_PiPulse = 4
 propagator_parameters = rydbergcontrol.phase_propagator_parameters(
-    hamiltonian_parameters, Nsteps_PiPulse, 16)
-control_problem = rydbergcontrol.state_control_problem(
-    hamiltonian_parameters, propagator_parameters)
+    hamiltonian_parameters, Nsteps_PiPulse, 64)
+control_problem = rydbergcontrol.unitary_control_problem(
+    propagator_parameters, initialization='Constant', robust=True,
+    base_params=hamiltonian_base_parameters,
+    uncertain_params=hamiltonian_uncertain_parameters)
 
 if __name__ == '__main__':
-    phi_opt, infidelity_min = grape.grape(control_problem, debug=True)
+    phi_opt, infidelity_min = grape.grape(control_problem, debug=True, gtol=1e-5)

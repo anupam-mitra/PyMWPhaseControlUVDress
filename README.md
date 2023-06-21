@@ -1,49 +1,66 @@
 # PyQuantumControl
- 
-Implementing quantum optimal control in Python using `scipy` and `numpy`.
- 
+
+Implementing quantum optimal control in Python using `numpy` and `scipy`.
+
 ## Overview
- 
-This repository provides a framework for simulating and optimizing quantum control pulses using the GRAPE (Gradient Ascent Pulse Engineering) algorithm. It is designed for research into Rydberg atoms, spin systems, and two-level systems.
- 
+
+This repository provides a framework for simulating and optimizing quantum control pulses using GRAPE and related GOAT-style search scripts. It is aimed at Rydberg atom gates, spin systems, and two-level systems.
+
+See `ARCHITECTURE.md` for the current module layout and execution flow.
+
 ## Core Modules
- 
-The repository is structured with core logic at the root to facilitate easy imports across scripts:
- 
-- `grape.py`: The core optimization engine implementing the GRAPE algorithm.
-- `timeevolution.py`: Handles propagation, time-evolution, and gradient calculations for the quantum state/unitary.
-- `objectives.py`: Contains various cost functions, infidelity metrics, and robust averaging logic.
-- `rydberghamiltonians.py`, `twoplevelhamiltonians.py`, `spinhamiltonians.py`: Define the physical Hamiltonian models.
-- `rydberg_ms_hamiltonians.py`: Hamiltonian and gradient for the Mølmer-Sørensen (MS) gate protocol.
-- `fidelity.py`, `spinoperators.py`, `oscillators.py`, `rydbergcontrol.py`: Shared mathematical utilities and operator builders.
- 
+
+Core logic now lives in packages:
+
+- `core/`: physics, Hamiltonians, time evolution, unitary helpers.
+- `control/`: GRAPE/GOAT optimization engines.
+- `dataio/`: config loading and HDF5/markdown result writing.
+- `viz/`: plotting helpers.
+- Legacy root wrappers have been removed; use `core/`, `control/`, `dataio/`, `viz/`, and `scripts/` directly.
+- `fidelity.py`, `spinoperators.py`, `oscillators.py`, `rydbergcontrol.py`: shared mathematical utilities and operator builders.
+
 ## Repository Structure
- 
-- Root Directory: Contains core modules and `*_main.py` entry points for specific control problems.
-- `configs/`: YAML configuration files for different physical regimes and protocols.
-- `analyses/`: Scripts for analyzing optimization results and performing secondary simulations.
-- `bench/`: Benchmarking scripts for performance and accuracy verification.
- 
+
+- `core/`, `control/`, `dataio/`, `viz/`: shared modules.
+- `scripts/`: CLI entry points.
+- `configs/`: YAML configuration files for specific strong/weak blockade regimes.
+- `analyses/`: Secondary analysis and plotting scripts.
+- `bench/`: Benchmarking and verification scripts.
+
 ## Usage
- 
+
 ### Dependencies
 - Python 3
 - `numpy`
 - `scipy`
 - `pyyaml`
- 
-### Running Simulations
-The project uses a dictionary-driven configuration. To run a simulation, execute the relevant `*_main.py` script from the repository root:
- 
-```bash
-python3 rydbergcontrol_main.py
-```
- 
-For protocols using YAML configurations (e.g., the MS gate), specify the configuration file:
- 
-```bash
-python3 rydberg_ms_gate_main.py --config configs/ms_robust_vanilla.yaml
-```
- 
-Note: Ensure you run commands from the root directory so that local imports resolve correctly.
 
+### Running Simulations
+Run commands from the repository root so local imports resolve correctly.
+
+Example GRAPE run:
+
+```bash
+python3 scripts/rydbergcontrol_main.py
+```
+
+Example YAML-driven MS gate run:
+
+```bash
+python3 scripts/rydberg_ms_gate_main.py --config configs/ms_robust_vanilla.yaml
+```
+
+Blockade-regime examples:
+
+```bash
+python3 scripts/rydberg_ms_gate_main.py --config configs/ms_1p_strong_blockade.yaml
+python3 scripts/rydberg_ms_gate_main.py --config configs/ms_1p_weak_blockade.yaml
+python3 scripts/rydberg_ms_gate_main.py --config configs/ms_2p_strong_blockade.yaml
+python3 scripts/rydberg_ms_gate_main.py --config configs/ms_2p_weak_blockade.yaml
+```
+
+Example manuscript blockade search:
+
+```bash
+python3 scripts/optimize_arxiv_spin_echo_blockade_1p.py
+```

@@ -28,7 +28,7 @@ import scipy
 from numpy import exp, sin, cos, tan, arctan2
 from scipy.linalg import expm
 
-import rydbergatoms
+import rydberghamiltonians
 
 
 """
@@ -151,13 +151,13 @@ def adiabaticrydbergdressing_propagator_detuningsweep(adiabatic_params):
 
         
         hamiltonians_dress[:, :, n] = \
-            rydbergatoms.hamiltonian_PerfectBlockade(0, h_params_dress)
+            rydberghamiltonians.hamiltonian_PerfectBlockade(0, h_params_dress)
         propagators_dress[:, :, n] = expm(-1j * Tstep * hamiltonians_dress[:, :, n])
 
         propagator_cumulative_dress = np.dot(propagators_dress[:, :, n], propagator_cumulative_dress)
         
         hamiltonians_undress[:, :, n] = \
-            rydbergatoms.hamiltonian_PerfectBlockade(0, h_params_undress)
+            rydberghamiltonians.hamiltonian_PerfectBlockade(0, h_params_undress)
         propagators_undress[:, :, n] = expm(-1j * Tstep * hamiltonians_undress[:, :, n])
 
         propagator_cumulative_undress = np.dot(propagators_undress[:, :, n], propagator_cumulative_undress)
@@ -293,7 +293,7 @@ def adiabatic_evolution_propagators (adiabatic_parameters):
         }
 
         hamiltonians_dress[:, :, n] = \
-            rydbergatoms.hamiltonian_PerfectBlockade(0, h_params_dress)
+            rydberghamiltonians.hamiltonian_PerfectBlockade(0, h_params_dress)
         propagators_dress[:, :, n] = \
                         expm(-1j * Tstep * hamiltonians_dress[:, :, n])
 
@@ -301,7 +301,7 @@ def adiabatic_evolution_propagators (adiabatic_parameters):
             np.dot(propagators_dress[:, :, n], propagator_cumulative_dress)
         
         hamiltonians_undress[:, :, n] = \
-            rydbergatoms.hamiltonian_PerfectBlockade(0, h_params_undress)
+            rydberghamiltonians.hamiltonian_PerfectBlockade(0, h_params_undress)
         propagators_undress[:, :, n] = \
             expm(-1j * Tstep * hamiltonians_undress[:, :, n])
 

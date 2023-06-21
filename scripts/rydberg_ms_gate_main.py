@@ -1,8 +1,7 @@
 import numpy as np
-import grape
+import control.optimization as grape
 import objectives
-import rydberg_ms_hamiltonians
-import yaml
+import core.physics as rydberg_ms_hamiltonians
 import argparse
 import os
 
@@ -37,6 +36,8 @@ def get_ms_yy_target():
     return U_full
 
 def main():
+    import yaml
+
     parser = argparse.ArgumentParser(description="Run MS gate GRAPE optimization with a YAML config.")
     parser.add_argument("--config", type=str, required=True, help="Path to the YAML configuration file.")
     args = parser.parse_args()
