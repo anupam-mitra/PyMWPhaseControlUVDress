@@ -1,7 +1,7 @@
 import numpy as np
 import scipy
 
-import oscillators
+from core import oscillators
 
 from numpy import sqrt
 from scipy.linalg import expm

@@ -11,7 +11,7 @@ except ModuleNotFoundError:
     h5py = None
 
 from core.unitaries import get_ms_yy_target_4x4, microwave_x_pulse_9d
-from params import PropagatorParameters
+from core.params import PropagatorParameters
 from core.physics import hamiltonian_ms_gate, hamiltonian_ms_gate_grad
 from core.evolution import propagator_ivp, propagator_with_gradient_ivp
 

@@ -2,7 +2,7 @@ import numpy as np
 import scipy.optimize
 import copy
 from core.evolution import propagator_with_gradient_ivp
-from params import PropagatorParameters
+from core.params import PropagatorParameters
 import core.physics as rydberg_ms_hamiltonians
 
 def get_ms_yy_target():

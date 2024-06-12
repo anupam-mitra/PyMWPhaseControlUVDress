@@ -1,10 +1,10 @@
 import numpy as np
 import scipy.optimize
 from control.optimization import grape
-from params import ControlProblem, PropagatorParameters
+from core.params import ControlProblem, PropagatorParameters
 from core.physics import hamiltonian_ms_gate, hamiltonian_ms_gate_grad
 from core.unitaries import get_ms_yy_target
-from objectives import infidelity_unitary, infidelity_unitary_gradient
+from control.objectives import infidelity_unitary, infidelity_unitary_gradient
 
 def main():
     # Hyperparameters

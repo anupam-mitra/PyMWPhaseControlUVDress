@@ -2,7 +2,7 @@ import numpy as np
 import scipy.optimize
 from core.evolution import propagator_with_gradient_ivp
 from core.ms_goat_models import GaussianCosineAnsatz
-from params import PropagatorParameters
+from core.params import PropagatorParameters
 from core.unitaries import get_ms_yy_target
 
 def combined_ansatz_val(t, params, T_control, n_basis):

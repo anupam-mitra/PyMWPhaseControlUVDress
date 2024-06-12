@@ -1,6 +1,6 @@
 import argparse
 
-from goat_spin_echo_blockade import make_2p_case, run_case, write_results_h5, write_results_md
+from analyses.goat_spin_echo_blockade import make_2p_case, run_case, write_results_h5, write_results_md
 
 
 def main():

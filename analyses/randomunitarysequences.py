@@ -2,8 +2,8 @@ import numpy as np
 
 from numpy import pi
 
-import fidelity
-import spinoperators
+from core import fidelity
+from core import spinoperators
 
 
 def random_sequence_unitary(nuvstages=1024, uv_error_width=0.05):

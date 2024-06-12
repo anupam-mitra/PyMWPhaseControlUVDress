@@ -1,7 +1,7 @@
 import numpy as np
 
 from core.evolution import propagator_ivp
-from params import PropagatorParameters
+from core.params import PropagatorParameters
 from core.physics import hamiltonian_ms_gate
 
 

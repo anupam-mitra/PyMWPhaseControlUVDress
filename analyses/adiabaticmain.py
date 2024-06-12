@@ -6,7 +6,7 @@ import scipy
 
 from numpy import sqrt, sign, pi, arctan2, sin
 
-import adiabaticdressundress
+from analyses import adiabaticdressundress
 
 
 def evaluate_example(numpoints=512):

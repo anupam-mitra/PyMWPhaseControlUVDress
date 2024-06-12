@@ -1,6 +1,6 @@
 import numpy as np
 import control.optimization as grape
-import objectives
+from control import objectives
 import core.physics as rydberg_ms_hamiltonians
 import argparse
 import os

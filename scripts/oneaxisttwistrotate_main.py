@@ -25,10 +25,10 @@
 
 import numpy as np
 
-import spinhamiltonians
+from core import spinhamiltonians
 import control.optimization as grape
-import objectives
-import randommatrices
+from control import objectives
+from core import randommatrices
 
 from numpy import sqrt, pi
 

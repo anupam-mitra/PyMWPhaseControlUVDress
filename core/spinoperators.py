@@ -3,7 +3,7 @@ import numpy as np
 from numpy import cos, sin, sqrt
 from scipy.linalg import expm
 
-from fidelity import dagger
+from core.fidelity import dagger
 
 
 def angular_momentum_operators(s):

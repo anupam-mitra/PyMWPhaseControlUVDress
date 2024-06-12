@@ -26,10 +26,10 @@
 import copy
 import itertools
 import numpy as np
-import fidelity
-from core.evolution import propagator, propagator_with_gradient
 
-from params import ControlProblem
+from core import fidelity
+from core.evolution import propagator, propagator_with_gradient
+from core.params import ControlProblem
 
 def infidelity (phi, control_params):
     """
@@ -320,100 +320,3 @@ def robust_infidelity_unitary_gradient (phi, control_params):
     I_gradient_mean /= Nterms_average
     
     return I_gradient_mean
-
-def robust_adiabatic_infidelity_unitary(phi, control_params):
-    """
-    Computes the infidelity for a control task
-    for given values of the control variables
-    for inhomogeneities and the gradient of the
-    infidelity for the same task
-    
-    As of now it is very specific to Rydberg atoms
-    
-    Parameters
-    ----------
-    phi:
-    Values of the control variables at which to evaluate the
-    gradient of the propagator
-    
-    control_params:
-    ControlProblem dataclass or dictionary representing parameters of the control problem
-    
-    Returns
-    -------
-    I_average:
-    Infidelity = 1 - fidelity evaluated at given values of the control
-    variables, averaged over all inhomogeneities
-    
-    I_average_gradient:
-    Gradient of infidelity = 1 - fidelity with respect to the
-    control variables evaluated at given values of the control
-    variables
-    """
-    if isinstance(control_params, dict):
-        control_params = ControlProblem.from_dict(control_params)
-
-    hamiltonian_landmarks_list = control_params.hamiltonian_landmarks
-    Nlandmarks = len(hamiltonian_landmarks_list)
-
-    Nsteps = control_params.propagator_params.Nsteps
-
-    u_params = control_params.propagator_params
-
-    u_target = control_params.unitary_target
-    Nstates = control_params.n_states_unitary
-
-    # Check for the matrix rank of the desired unitary to use for calculating
-    # infidelity for a partial isometry
-    if Nstates == None:
-        Nstates = np.linalg.matrix_rank(u_target)
-        control_params.n_states_unitary = Nstates
-
-    F_average = 0
-    F_average_gradient = np.zeros(Nsteps)
-
-    Infidelities = np.zeros((Nlandmarks,))
-
-    unitary_dressing_landmarkwise = []
-    unitary_undressing_landmarkwise = []
-    unitary_mwcontrol_landmarkwise = []
-    unitary_mwcontrol_gradient_landmarkwise = []
-
-    if control_params.landmark_weights is not None:
-        landmark_weights = control_params.landmark_weights
-    else:
-        landmark_weights = np.ones((Nlandmarks, )) / Nlandmarks
-
-    for l in range(Nlandmarks):
-        hamiltonian_landmark_current = hamiltonian_landmarks_list[l]
-
-        DeltaRa = hamiltonian_landmark_current.get('DeltaRa')
-        DeltaRb = hamiltonian_landmark_current.get('DeltaRb')
-
-        u_params_current = copy.deepcopy(u_params)
-
-        # We assume h_params is a dict for now as per original code
-        u_params_current.hamiltonian_params['DeltaRa'] = DeltaRa
-        u_params_current.hamiltonian_params['DeltaRb'] = DeltaRb
-
-        u, u_gradient = propagator_with_gradient(phi, u_params_current)
-
-        u_dress = control_params.unitary_dressing_landmarks[l]
-        u_undress = control_params.unitary_undressing_landmarks[l]
-
-        u_protocol = np.dot(u_undress, np.dot(u, u_dress))
-
-        F = fidelity.unitary_fidelity(u_protocol, u_target, Nstates)
-        F_average += landmark_weights[l] * F
-
-        for n in range(Nsteps):
-            u_protocol_gradient_step = np.dot(u_undress, np.dot(u_gradient[n], u_dress))
-            F_average_gradient[n] -= landmark_weights[l] * fidelity.unitary_infidelity_gradient(
-                u_protocol, [u_protocol_gradient_step], u_target, Nstates)[0]
-
-    I_average = 1 - F_average
-    I_average_gradient = - F_average_gradient
-
-    return I_average, I_average_gradient
-
-# I need to fix the robust_adiabatic_infidelity_unitary function implementation details

@@ -2,8 +2,8 @@ import numpy as np
 
 from numpy import pi
 
-import fidelity
-import spinoperators
+from core import fidelity
+from core import spinoperators
 
 
 def spin_echo_unitary():

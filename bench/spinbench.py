@@ -1,5 +1,5 @@
 import numpy as np
-import spinoperators
+from core import spinoperators
 
 from numpy import sqrt, exp, pi
 from scipy.linalg import expm

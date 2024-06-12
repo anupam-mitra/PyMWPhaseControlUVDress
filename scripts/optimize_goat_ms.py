@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.optimize
 from core.evolution import propagator_with_gradient_ivp
-from params import PropagatorParameters
+from core.params import PropagatorParameters
 from core.physics import hamiltonian_ms_gate, hamiltonian_ms_gate_grad
 from core.unitaries import get_ms_yy_target
 import core.ms_goat_models as mgm

@@ -2,7 +2,7 @@ import numpy as np
 
 from numpy import exp, sqrt
 
-from fidelity import dagger
+from core.fidelity import dagger
 
 
 class HarmonicOscillator:

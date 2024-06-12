@@ -3,7 +3,6 @@ import os
 import numpy as np
 import scipy
 import scipy.integrate
-import matplotlib.pyplot as plt
 
 from scipy.linalg import expm
 from numpy import pi, cos, sin, exp, sqrt, arctan2

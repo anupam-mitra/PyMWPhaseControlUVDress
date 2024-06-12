@@ -3,7 +3,7 @@ import scipy.optimize
 
 from numpy import pi
 
-from params import ControlProblem
+from core.params import ControlProblem
 
 
 def grape(control_problem, debug=False, gtol=1e-5, maxiter=None):

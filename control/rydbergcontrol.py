@@ -1,8 +1,9 @@
 import numpy as np
 from numpy import pi
-import objectives
-import rydberghamiltonians
-from params import ControlProblem, PropagatorParameters
+
+from control import objectives
+from core.params import ControlProblem, PropagatorParameters
+from core import rydberghamiltonians
 
 
 def hamiltonian_parameters(OmegaR=1, OmegaMW=1, DeltaR=0.01, DeltaMW=0.01,

@@ -28,7 +28,7 @@ import scipy
 from numpy import exp, sin, cos, tan, arctan2
 from scipy.linalg import expm
 
-import rydberghamiltonians
+from core import rydberghamiltonians
 
 
 """

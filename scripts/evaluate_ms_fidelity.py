@@ -1,7 +1,7 @@
 import numpy as np
 
 from dataio.io_utils import load_yaml
-from params import PropagatorParameters
+from core.params import PropagatorParameters
 from core.physics import hamiltonian_ms_gate
 from core.evolution import propagator_ivp
 from core.unitaries import get_ms_yy_target, one_photon_ramp

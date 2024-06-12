@@ -24,7 +24,7 @@
 
 
 import control.optimization as grape
-import rydbergcontrol
+from control import rydbergcontrol
 
 hamiltonian_base_parameters = rydbergcontrol.base_hamiltonian_parameters()
 hamiltonian_parameters = rydbergcontrol.hamiltonian_parameters()
